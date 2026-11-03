@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { NODES, BOARD_NODES, RA_CX, RA_CY, RING_RADII, polarToCartesian } from '../data/boardGraph';
 
 export default function BoardCanvas({
@@ -28,6 +28,127 @@ export default function BoardCanvas({
   const lastPlottedNodeId = propLastPlottedNodeId !== undefined
     ? propLastPlottedNodeId
     : (plottedPath && plottedPath.length > 0 ? plottedPath[plottedPath.length - 1] : null);
+  // Drag-and-Drive Interaction State
+  const svgRef = useRef(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragPos, setDragPos] = useState(null);
+  const [dragAngle, setDragAngle] = useState(null);
+  const lastSnappedNodeRef = useRef(null);
+
+  // Convert Client Screen Coordinates to SVG Tabletop Coordinates
+  const getSvgCoords = useCallback((e) => {
+    if (!svgRef.current) return null;
+    const pt = svgRef.current.createSVGPoint();
+    pt.x = e.clientX;
+    pt.y = e.clientY;
+    const ctm = svgRef.current.getScreenCTM();
+    if (!ctm) return null;
+    return pt.matrixTransform(ctm.inverse());
+  }, []);
+
+  // Grab the Toy Car (Pointer Down)
+  const handleCarPointerDown = useCallback((e) => {
+    if (isDriving) return;
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {}
+
+    const pt = getSvgCoords(e);
+    if (pt) {
+      setDragPos({ x: pt.x, y: pt.y });
+    }
+    setIsDragging(true);
+    lastSnappedNodeRef.current = lastPlottedNodeId;
+    if (playClick) playClick(640);
+  }, [isDriving, getSvgCoords, lastPlottedNodeId, playClick]);
+
+  // Drag the Toy Car along the Road & Roundabout (Pointer Move)
+  const handleCarPointerMove = useCallback((e) => {
+    if (!isDragging) return;
+    const pt = getSvgCoords(e);
+    if (!pt) return;
+
+    setDragPos({ x: pt.x, y: pt.y });
+
+    // Rotate car body towards drag movement direction
+    const dx = pt.x - carPose.x;
+    const dy = pt.y - carPose.y;
+    if (Math.hypot(dx, dy) > 7) {
+      const rawAngle = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
+      setDragAngle(rawAngle);
+    }
+
+    const SNAP_RADIUS = 36;
+    let snappedId = null;
+
+    // 1. Magnetically snap to any connected legal next waypoint
+    for (const nextId of validNextNodeIds) {
+      if (blockedNodes.includes(nextId)) continue;
+      const node = BOARD_NODES[nextId];
+      if (!node) continue;
+      const dist = Math.hypot(node.x - pt.x, node.y - pt.y);
+      if (dist <= SNAP_RADIUS) {
+        snappedId = nextId;
+        break;
+      }
+    }
+
+    if (snappedId && snappedId !== lastSnappedNodeRef.current) {
+      lastSnappedNodeRef.current = snappedId;
+      handleNodeClick(snappedId);
+      return;
+    }
+
+    // 2. Drag backwards to undo the previous step smoothly
+    if (plottedPath.length >= 2) {
+      const prevId = plottedPath[plottedPath.length - 2];
+      const prevNode = BOARD_NODES[prevId];
+      if (prevNode) {
+        const dist = Math.hypot(prevNode.x - pt.x, prevNode.y - pt.y);
+        if (dist <= SNAP_RADIUS && prevId !== lastSnappedNodeRef.current) {
+          lastSnappedNodeRef.current = prevId;
+          handleNodeClick(prevId);
+          return;
+        }
+      }
+    }
+  }, [isDragging, getSvgCoords, carPose, validNextNodeIds, blockedNodes, plottedPath, handleNodeClick]);
+
+  // Release the Toy Car (Pointer Up)
+  const handleCarPointerUp = useCallback((e) => {
+    if (!isDragging) return;
+    try {
+      if (e && e.currentTarget && e.pointerId) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      }
+    } catch {}
+    setIsDragging(false);
+    setDragPos(null);
+    setDragAngle(null);
+    lastSnappedNodeRef.current = null;
+    if (playClick) playClick(520);
+  }, [isDragging, playClick]);
+
+  // Global window pointerup safety
+  useEffect(() => {
+    const onGlobalPointerUp = () => {
+      if (isDragging) {
+        setIsDragging(false);
+        setDragPos(null);
+        setDragAngle(null);
+        lastSnappedNodeRef.current = null;
+      }
+    };
+    window.addEventListener('pointerup', onGlobalPointerUp);
+    return () => window.removeEventListener('pointerup', onGlobalPointerUp);
+  }, [isDragging]);
+
+  const activeCarX = isDragging && dragPos ? dragPos.x : carPose.x;
+  const activeCarY = isDragging && dragPos ? dragPos.y : carPose.y;
+  const activeCarAngle = isDragging && dragAngle !== null ? dragAngle : carPose.angle;
+
 
   return (
 <div className="relative w-full rounded-2xl overflow-hidden border-4 border-amber-900/70 shadow-2xl bg-[#156c36]">
@@ -49,9 +170,13 @@ export default function BoardCanvas({
             )}
 
             <svg
+              ref={svgRef}
               viewBox="0 0 1200 820"
-              className="w-full h-auto block"
-              style={{ touchAction: 'manipulation' }}
+              className="w-full h-auto block select-none"
+              style={{ touchAction: 'none' }}
+              onPointerMove={handleCarPointerMove}
+              onPointerUp={handleCarPointerUp}
+              onPointerCancel={handleCarPointerUp}
             >
               <defs>
                 {/* Subtle Tabletop Board Matte Texture */}
@@ -919,13 +1044,144 @@ export default function BoardCanvas({
                 );
               })}
 
-              {/* 13. ACTIVE PLAYER 3D-STYLED TOY CAR (WITH BLINKERS, REVERSE LIGHTS & LABEL) */}
+              {/* 12B. MAGNETIC ATTRACTOR BEAMS & GUIDANCE HALOS WHILE DRAGGING THE CAR */}
+              {isDragging && (
+                <g id="drag-magnetic-attractors" pointerEvents="none">
+                  {/* Attractor beams to valid forward waypoints */}
+                  {validNextNodeIds.map((nextId) => {
+                    if (blockedNodes.includes(nextId)) return null;
+                    const node = BOARD_NODES[nextId];
+                    if (!node) return null;
+                    const isTarget = nextId === targetNodeId;
+                    return (
+                      <g key={`attractor-${nextId}`}>
+                        <line
+                          x1={activeCarX}
+                          y1={activeCarY}
+                          x2={node.x}
+                          y2={node.y}
+                          stroke={isTarget ? '#facc15' : '#4ade80'}
+                          strokeWidth="2.8"
+                          strokeDasharray="6 4"
+                          strokeOpacity="0.85"
+                        />
+                        <circle
+                          cx={node.x}
+                          cy={node.y}
+                          r="18"
+                          fill={isTarget ? '#facc15' : '#4ade80'}
+                          fillOpacity="0.28"
+                          stroke={isTarget ? '#facc15' : '#4ade80'}
+                          strokeWidth="2.2"
+                        />
+                        <g transform={`translate(${node.x}, ${node.y - 20})`}>
+                          <rect
+                            x="-24"
+                            y="-7"
+                            width="48"
+                            height="14"
+                            rx="3"
+                            fill="#0f172a"
+                            fillOpacity="0.9"
+                            stroke={isTarget ? '#facc15' : '#4ade80'}
+                            strokeWidth="1"
+                          />
+                          <text
+                            x="0"
+                            y="3"
+                            textAnchor="middle"
+                            fill={isTarget ? '#facc15' : '#4ade80'}
+                            fontSize="7"
+                            fontWeight="900"
+                          >
+                            {isTarget ? 'TARGET' : 'SNAP'}
+                          </text>
+                        </g>
+                      </g>
+                    );
+                  })}
+
+                  {/* Attractor beam to previous waypoint for smooth undo */}
+                  {plottedPath.length >= 2 && (() => {
+                    const prevId = plottedPath[plottedPath.length - 2];
+                    const prevNode = BOARD_NODES[prevId];
+                    if (!prevNode) return null;
+                    return (
+                      <g key="attractor-undo">
+                        <line
+                          x1={activeCarX}
+                          y1={activeCarY}
+                          x2={prevNode.x}
+                          y2={prevNode.y}
+                          stroke="#f59e0b"
+                          strokeWidth="2.2"
+                          strokeDasharray="5 3"
+                          strokeOpacity="0.75"
+                        />
+                        <circle
+                          cx={prevNode.x}
+                          cy={prevNode.y}
+                          r="16"
+                          fill="#f59e0b"
+                          fillOpacity="0.25"
+                          stroke="#f59e0b"
+                          strokeWidth="1.8"
+                        />
+                        <g transform={`translate(${prevNode.x}, ${prevNode.y + 22})`}>
+                          <rect
+                            x="-22"
+                            y="-6"
+                            width="44"
+                            height="13"
+                            rx="3"
+                            fill="#0f172a"
+                            fillOpacity="0.9"
+                            stroke="#f59e0b"
+                            strokeWidth="1"
+                          />
+                          <text
+                            x="0"
+                            y="3"
+                            textAnchor="middle"
+                            fill="#f59e0b"
+                            fontSize="6.5"
+                            fontWeight="900"
+                          >
+                            UNDO
+                          </text>
+                        </g>
+                      </g>
+                    );
+                  })()}
+                </g>
+              )}
+
+              {/* 13. ACTIVE PLAYER 3D-STYLED TOY CAR (WITH DRAG-TO-STEER INTERACTION) */}
               <g
                 id="player-active-car"
-                transform={`translate(${carPose.x}, ${carPose.y})`}
-                style={{ pointerEvents: 'none' }}
+                transform={`translate(${activeCarX}, ${activeCarY}) scale(${isDragging ? 1.15 : 1})`}
+                onPointerDown={handleCarPointerDown}
+                style={{
+                  pointerEvents: isDriving ? 'none' : 'auto',
+                  cursor: isDriving ? 'default' : isDragging ? 'grabbing' : 'grab',
+                  touchAction: 'none'
+                }}
+                className="select-none transition-transform duration-75"
               >
-                <g transform={`rotate(${carPose.angle})`} filter="url(#carShadow)">
+                {/* Tactile Lift / Drag Ring beneath car when grabbed */}
+                {isDragging && (
+                  <circle
+                    r="28"
+                    fill="#4ade80"
+                    fillOpacity="0.18"
+                    stroke="#4ade80"
+                    strokeWidth="2.5"
+                    strokeDasharray="4 2"
+                    className="animate-pulse"
+                  />
+                )}
+
+                <g transform={`rotate(${activeCarAngle})`} filter="url(#carShadow)">
                   {/* Headlight Beams */}
                   <polygon
                     points="-8,-20 -16,-44 -2,-44"
@@ -1035,31 +1291,37 @@ export default function BoardCanvas({
                 {!isDriving && (
                   <g transform="translate(0, 29)">
                     <rect
-                      x="-40"
+                      x="-44"
                       y="-8"
-                      width="80"
-                      height="14"
+                      width="88"
+                      height="15"
                       rx="4"
                       fill="#0f172a"
-                      stroke="#4ade80"
+                      fillOpacity="0.95"
+                      stroke={isDragging ? '#38bdf8' : '#4ade80'}
                       strokeWidth="1.4"
                     />
                     <text
                       x="0"
-                      y="1.5"
+                      y="2.5"
                       textAnchor="middle"
-                      fill="#4ade80"
-                      fontSize="8"
+                      fill={isDragging ? '#38bdf8' : '#4ade80'}
+                      fontSize="7.5"
                       fontWeight="900"
+                      letterSpacing="0.4"
                     >
-                      {mode === 'challenges' ? `${currentChallenge.carLabel} (YOU)` : 'YOUR CAR'}
+                      {isDragging
+                        ? 'STEER CAR • SNAP'
+                        : mode === 'challenges'
+                        ? `${currentChallenge.carLabel} • DRAG ME`
+                        : 'YOUR CAR • DRAG ME'}
                     </text>
                   </g>
                 )}
               </g>
 
               {/* 14. INSTRUCTOR WHITE POINTER STICK */}
-              {lastPlottedNodeId && BOARD_NODES[lastPlottedNodeId] && !isDriving && (
+              {lastPlottedNodeId && BOARD_NODES[lastPlottedNodeId] && !isDriving && !isDragging && (
                 <g
                   transform={`translate(${BOARD_NODES[lastPlottedNodeId].x}, ${BOARD_NODES[lastPlottedNodeId].y})`}
                   style={{ pointerEvents: 'none' }}

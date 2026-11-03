@@ -255,6 +255,47 @@ export default function App() {
     playClick(480);
   }, [startNodeId, getInitialNodeAngle, playClick]);
 
+  // Synchronize car pose with the tip of plottedPath when not playing animation
+  useEffect(() => {
+    if (isDriving) return;
+    if (!plottedPath || plottedPath.length === 0) return;
+    const lastId = plottedPath[plottedPath.length - 1];
+    const lastNode = BOARD_NODES[lastId];
+    if (!lastNode) return;
+
+    let angle = 90;
+    let turn = 'none';
+    let isReverse = false;
+
+    if (plottedPath.length >= 2) {
+      const prevId = plottedPath[plottedPath.length - 2];
+      const prevNode = BOARD_NODES[prevId];
+      if (prevNode) {
+        const edge = ALL_EDGES.find((e) => e.from === prevId && e.to === lastId);
+        turn = edge?.turn || 'none';
+        isReverse = Boolean(edge?.isReverse);
+
+        if (prevNode.zone === 'roundabout' && lastNode.zone === 'roundabout' && prevNode.ring === lastNode.ring) {
+          const currA = Math.atan2(lastNode.y - RA_CY, lastNode.x - RA_CX);
+          angle = (Math.atan2(Math.cos(currA), -Math.sin(currA)) * 180) / Math.PI + 90;
+        } else {
+          const rawAngle = (Math.atan2(lastNode.y - prevNode.y, lastNode.x - prevNode.x) * 180) / Math.PI + 90;
+          angle = isReverse ? rawAngle + 180 : rawAngle;
+        }
+      }
+    } else {
+      angle = getInitialNodeAngle(lastId);
+    }
+
+    setCarPose({
+      x: lastNode.x,
+      y: lastNode.y,
+      angle,
+      turn,
+      isReverse
+    });
+  }, [plottedPath, isDriving, getInitialNodeAngle]);
+
   // Available next nodes from the end of `plottedPath`
   const lastPlottedNodeId = plottedPath[plottedPath.length - 1];
   const validNextNodeIds = useMemo(() => {
