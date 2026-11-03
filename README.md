@@ -71,3 +71,4 @@ npm run preview
 - **Tailwind CSS**
 - **Lucide React Icons**
 - **SVG Vector Graphics**
+
