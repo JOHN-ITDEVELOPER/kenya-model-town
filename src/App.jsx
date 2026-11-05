@@ -177,14 +177,27 @@ export default function App() {
 
   const handleGoogleSignIn = async () => {
     if (!isFirebaseConfigured || !auth || !googleProvider) {
-      alert('Firebase credentials not set in .env. Please configure your Firebase keys to sign in.');
+      alert('Firebase credentials not detected. Please verify your Firebase environment variables on Vercel or in .env.');
       return;
     }
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (err) {
       console.error('Sign in error:', err);
-      alert(`Google Sign In failed: ${err.message}`);
+      if (err.code === 'auth/unauthorized-domain') {
+        const hostname = typeof window !== 'undefined' ? window.location.hostname : 'your Vercel domain';
+        alert(
+          'Google Sign In Blocked: Unauthorized Domain!\n\n' +
+          'Firebase Authentication requires your deployment domain to be whitelisted.\n\n' +
+          'To fix this in 30 seconds:\n' +
+          '1. Go to Firebase Console -> Authentication -> Settings -> Authorized domains.\n' +
+          '2. Click "Add domain".\n' +
+          '3. Enter: ' + hostname + '\n' +
+          '4. Click Save and try signing in again!'
+        );
+      } else {
+        alert(`Google Sign In failed: ${err.message}`);
+      }
     }
   };
 

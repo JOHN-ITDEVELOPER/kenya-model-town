@@ -2,16 +2,25 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
+// Helper to read env variables with or without VITE_ prefix (supports Vercel, Netlify, and local .env)
+const getEnv = (key) => {
+  return (
+    import.meta.env[`VITE_${key}`] ||
+    import.meta.env[key] ||
+    ''
+  );
 };
 
-// Check if Firebase keys are provided in .env
+const firebaseConfig = {
+  apiKey: getEnv('FIREBASE_API_KEY'),
+  authDomain: getEnv('FIREBASE_AUTH_DOMAIN'),
+  projectId: getEnv('FIREBASE_PROJECT_ID'),
+  storageBucket: getEnv('FIREBASE_STORAGE_BUCKET'),
+  messagingSenderId: getEnv('FIREBASE_MESSAGING_SENDER_ID'),
+  appId: getEnv('FIREBASE_APP_ID')
+};
+
+// Check if Firebase keys are provided in .env or Vercel
 export const isFirebaseConfigured = Boolean(
   firebaseConfig.apiKey &&
   firebaseConfig.projectId &&
@@ -34,9 +43,8 @@ if (isFirebaseConfigured) {
     console.error('Firebase initialization error:', err);
   }
 } else {
-  console.info('Firebase credentials not set in .env. Running in offline/local preset mode.');
+  console.info('Firebase credentials not set in .env or Vercel. Running in offline/local preset mode.');
 }
 
-export { auth, googleProvider, db };
-export const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || '';
-
+export { app, auth, googleProvider, db };
+export const ADMIN_EMAIL = getEnv('ADMIN_EMAIL');
