@@ -437,33 +437,34 @@ export const NODES = {
   }, {}),
 
   // --- SIDE ACCESS TWO-WAY ROAD (Left Vertical Connector) ---
+  // In Kenya (Keep Left): Northbound is West lane (x = 350), Southbound is East lane (x = 376)
   SIDE_N_BOT: {
-    id: 'SIDE_N_BOT', x: 376, y: 312, label: 'Side Road Northbound (Bot)',
+    id: 'SIDE_N_BOT', x: 350, y: 312, label: 'Side Road Northbound (Bot)',
     zone: 'side_road', road: 'Side Access Road (Northbound)',
-    ruleInfo: 'Two-Way Side Access Road (Northbound Lane). Green & Red toy cars park along the curb here.'
+    ruleInfo: 'Two-Way Side Access Road (Northbound Left Lane). Strict NTSA Keep Left discipline.'
   },
   SIDE_N_MID: {
-    id: 'SIDE_N_MID', x: 376, y: 228, label: 'Side Road (Angle Parking Jct)',
+    id: 'SIDE_N_MID', x: 350, y: 228, label: 'Side Road (Angle Parking Jct)',
     zone: 'side_road', road: 'Side Access Road (Angle Parking Entry)',
     ruleInfo: 'Side Access Road Junction: Turn right into Controlled Angle Parking entrance or continue North to Top Perimeter Road.'
   },
   SIDE_N_TOP: {
-    id: 'SIDE_N_TOP', x: 376, y: 145, label: 'Side Road Northbound (Top)',
+    id: 'SIDE_N_TOP', x: 350, y: 145, label: 'Side Road Northbound (Top)',
     zone: 'side_road', road: 'Side Access Road (Northbound Top)',
-    ruleInfo: 'Approaching Top Perimeter Two-Way Road.'
+    ruleInfo: 'Approaching Top Perimeter Two-Way Road. Turn right for Eastbound or left for Westbound.'
   },
   SIDE_S_TOP: {
-    id: 'SIDE_S_TOP', x: 350, y: 145, label: 'Side Road Southbound (Top)',
+    id: 'SIDE_S_TOP', x: 376, y: 145, label: 'Side Road Southbound (Top)',
     zone: 'side_road', road: 'Side Access Road (Southbound Top)',
-    ruleInfo: 'Entering Side Access Road Southbound from Top Perimeter Road.'
+    ruleInfo: 'Entering Side Access Road Southbound from Top Perimeter Road (East lane).'
   },
   SIDE_S_MID: {
-    id: 'SIDE_S_MID', x: 350, y: 245, label: 'Side Road Southbound (Mid)',
+    id: 'SIDE_S_MID', x: 376, y: 245, label: 'Side Road Southbound (Mid)',
     zone: 'side_road', road: 'Side Access Road (Southbound Mid)',
-    ruleInfo: 'Side Access Road Southbound.'
+    ruleInfo: 'Side Access Road Southbound (East lane, keeping left as you drive South).'
   },
   SIDE_S_BOT: {
-    id: 'SIDE_S_BOT', x: 350, y: 312, label: 'Side Road Southbound (Bot)',
+    id: 'SIDE_S_BOT', x: 376, y: 312, label: 'Side Road Southbound (Bot)',
     zone: 'side_road', road: 'Side Access Road (Southbound Exit)',
     ruleInfo: 'Yield before turning 90° Left onto Major Road West (Lane 1).'
   },
@@ -517,9 +518,9 @@ export const NODES = {
     ruleInfo: 'Top Two-Way Perimeter Road (Eastbound Left Lane).'
   },
   TOP_E_JCT_W: {
-    id: 'TOP_E_JCT_W', x: 376, y: 76, label: 'Top Road Eastbound (Side Jct)',
+    id: 'TOP_E_JCT_W', x: 350, y: 76, label: 'Top Road Eastbound (Side Jct)',
     zone: 'top_road', road: 'Top Perimeter Road (Side Jct)',
-    ruleInfo: 'Top Road Junction with Side Access Road.'
+    ruleInfo: 'Top Road Junction with Side Access Road (Eastbound Left Lane).'
   },
   TOP_E_ZEBRA1: {
     id: 'TOP_E_ZEBRA1', x: 432, y: 76, label: 'Zebra Crossing #1 (Eastbound)',
@@ -583,7 +584,7 @@ export const NODES = {
     ruleInfo: 'West Pedestrian Zebra Crossing on Top Perimeter Road.'
   },
   TOP_W_JCT_W: {
-    id: 'TOP_W_JCT_W', x: 350, y: 100, label: 'Top Road Westbound (Side Jct)',
+    id: 'TOP_W_JCT_W', x: 376, y: 100, label: 'Top Road Westbound (Side Jct)',
     zone: 'top_road', road: 'Top Perimeter Road (Side Jct)',
     ruleInfo: 'Turn 90° Left into Side Access Road Southbound or continue West.'
   },
@@ -822,7 +823,7 @@ export const buildBoardEdges = () => {
   addEdge('SIDE_N_BOT', 'SIDE_N_MID');
   addEdge('SIDE_N_MID', 'SIDE_N_TOP');
   addEdge('SIDE_N_TOP', 'TOP_E_JCT_W', { turn: 'right' });
-  addEdge('SIDE_N_TOP', 'TOP_W_JCT_W', { turn: 'left' });
+  addEdge('SIDE_N_TOP', 'TOP_W_WEST', { turn: 'left' });
 
   addEdge('TOP_W_JCT_W', 'SIDE_S_TOP', { turn: 'left' });
   addEdge('TOP_E_JCT_W', 'SIDE_S_TOP', { turn: 'right' });
@@ -899,6 +900,80 @@ export const buildBoardEdges = () => {
   addEdge('TOP_W_FLUSH_APPROACH', 'FLUSH_BAY_2', { isReverse: true, turn: 'left' });
   addEdge('FLUSH_BAY_2', 'TOP_W_ZEBRA1', { isReverse: false, turn: 'right' });
   addEdge('FLUSH_BAY_2', 'TOP_E_MID', { isReverse: false, turn: 'right' });
+
+  // 19. Mistake Edges on Two-Way Single Carriageways (Kenyan Keep-Left Violations)
+  // Driving against traffic on Side Access Road:
+  addEdge('SIDE_S_MID', 'SIDE_S_TOP', {
+    isLegal: false,
+    violationReason: 'NTSA Major Traffic Violation (Failed to Keep Left): You drove Northbound in the Southbound lane into oncoming traffic! On two-way roads, you must always keep left.'
+  });
+  addEdge('SIDE_S_BOT', 'SIDE_S_MID', {
+    isLegal: false,
+    violationReason: 'NTSA Major Traffic Violation (Failed to Keep Left): You drove Northbound in the Southbound lane into oncoming traffic!'
+  });
+  addEdge('AP_ENTRY', 'SIDE_S_TOP', {
+    isLegal: false,
+    violationReason: 'NTSA Major Traffic Violation (Failed to Keep Left): Exiting parking into the Southbound lane while heading North is illegal! Always keep left.'
+  });
+  addEdge('SIDE_N_TOP', 'SIDE_N_MID', {
+    isLegal: false,
+    violationReason: 'NTSA Major Traffic Violation (Failed to Keep Left): You drove Southbound in the Northbound lane into oncoming traffic!'
+  });
+  addEdge('SIDE_N_MID', 'SIDE_N_BOT', {
+    isLegal: false,
+    violationReason: 'NTSA Major Traffic Violation (Failed to Keep Left): You drove Southbound in the Northbound lane into oncoming traffic!'
+  });
+
+  // Driving against traffic on Top Perimeter Road:
+  addEdge('TOP_E_EAST', 'TOP_E_ZEBRA2', {
+    isLegal: false,
+    violationReason: 'NTSA Major Traffic Violation (Failed to Keep Left): You drove Westbound in the Eastbound lane on the Top Perimeter Road into oncoming traffic! Always keep left.'
+  });
+  addEdge('TOP_E_ZEBRA2', 'TOP_E_JCT_N', {
+    isLegal: false,
+    violationReason: 'NTSA Major Traffic Violation (Failed to Keep Left): You drove Westbound in the Eastbound lane on the Top Perimeter Road into oncoming traffic!'
+  });
+  addEdge('TOP_E_JCT_N', 'TOP_E_MID', {
+    isLegal: false,
+    violationReason: 'NTSA Major Traffic Violation (Failed to Keep Left): You drove Westbound in the Eastbound lane on the Top Perimeter Road into oncoming traffic!'
+  });
+  addEdge('TOP_E_MID', 'TOP_E_ZEBRA1', {
+    isLegal: false,
+    violationReason: 'NTSA Major Traffic Violation (Failed to Keep Left): You drove Westbound in the Eastbound lane on the Top Perimeter Road into oncoming traffic!'
+  });
+  addEdge('TOP_E_ZEBRA1', 'TOP_E_JCT_W', {
+    isLegal: false,
+    violationReason: 'NTSA Major Traffic Violation (Failed to Keep Left): You drove Westbound in the Eastbound lane on the Top Perimeter Road into oncoming traffic!'
+  });
+  addEdge('TOP_E_JCT_W', 'TOP_E_WEST', {
+    isLegal: false,
+    violationReason: 'NTSA Major Traffic Violation (Failed to Keep Left): You drove Westbound in the Eastbound lane on the Top Perimeter Road into oncoming traffic!'
+  });
+
+  addEdge('TOP_W_WEST', 'TOP_W_JCT_W', {
+    isLegal: false,
+    violationReason: 'NTSA Major Traffic Violation (Failed to Keep Left): You drove Eastbound in the Westbound lane on the Top Perimeter Road into oncoming traffic!'
+  });
+  addEdge('TOP_W_JCT_W', 'TOP_W_ZEBRA1', {
+    isLegal: false,
+    violationReason: 'NTSA Major Traffic Violation (Failed to Keep Left): You drove Eastbound in the Westbound lane on the Top Perimeter Road into oncoming traffic!'
+  });
+  addEdge('TOP_W_ZEBRA1', 'TOP_W_FLUSH_APPROACH', {
+    isLegal: false,
+    violationReason: 'NTSA Major Traffic Violation (Failed to Keep Left): You drove Eastbound in the Westbound lane on the Top Perimeter Road into oncoming traffic!'
+  });
+  addEdge('TOP_W_FLUSH_APPROACH', 'TOP_W_JCT_N', {
+    isLegal: false,
+    violationReason: 'NTSA Major Traffic Violation (Failed to Keep Left): You drove Eastbound in the Westbound lane on the Top Perimeter Road into oncoming traffic!'
+  });
+  addEdge('TOP_W_JCT_N', 'TOP_W_ZEBRA2', {
+    isLegal: false,
+    violationReason: 'NTSA Major Traffic Violation (Failed to Keep Left): You drove Eastbound in the Westbound lane on the Top Perimeter Road into oncoming traffic!'
+  });
+  addEdge('TOP_W_ZEBRA2', 'TOP_W_EAST', {
+    isLegal: false,
+    violationReason: 'NTSA Major Traffic Violation (Failed to Keep Left): You drove Eastbound in the Westbound lane on the Top Perimeter Road into oncoming traffic!'
+  });
 
   return edges;
 };

@@ -168,6 +168,8 @@ export default function AdminChallengeBuilder({
       hint: '',
       carColor: '#ef4444',
       carLabel: 'RED CAR',
+      currentObstacleColor: '#eab308',
+      currentObstacleLabel: 'YELLOW CAR',
       vehicleType: 'saloon',
       startNode: 'MW_E_L4_START',
       targetNode: 'MW_W_L4_MID',
@@ -348,32 +350,50 @@ export default function AdminChallengeBuilder({
               {/* Obstacle Car Picker Options */}
               {builderTool === 'obstacle' && (
                 <div className="mt-1 p-2.5 rounded-lg bg-slate-900 border border-sky-800/50 flex flex-col gap-2">
-                  <div className="text-[11px] font-bold text-sky-300">Obstacle Car Details:</div>
+                  <div className="text-[11px] font-bold text-sky-300">Obstacle Car Details (Click board to place):</div>
                   <div className="flex items-center gap-2">
                     <span className="text-[11px] text-slate-400">Color:</span>
                     <div className="flex items-center gap-1.5">
-                      {CAR_COLORS.map((c) => (
-                        <button
-                          key={c.value}
-                          type="button"
-                          onClick={() => setNewCarColor(c.value)}
-                          className={`w-5 h-5 rounded-full border transition ${
-                            newCarColor === c.value ? 'ring-2 ring-sky-400 scale-110' : 'opacity-70'
-                          }`}
-                          style={{ backgroundColor: c.value }}
-                          title={c.label}
-                        />
-                      ))}
+                      {CAR_COLORS.map((c) => {
+                        const isSelected = (builderState.currentObstacleColor || newCarColor) === c.value;
+                        return (
+                          <button
+                            key={c.value}
+                            type="button"
+                            onClick={() => {
+                              setNewCarColor(c.value);
+                              const lbl = `${c.label.toUpperCase()} CAR`;
+                              setNewCarLabel(lbl);
+                              setBuilderState((prev) => ({
+                                ...prev,
+                                currentObstacleColor: c.value,
+                                currentObstacleLabel: lbl
+                              }));
+                            }}
+                            className={`w-5 h-5 rounded-full border transition ${
+                              isSelected ? 'ring-2 ring-sky-400 scale-110 border-white' : 'opacity-70 border-slate-700'
+                            }`}
+                            style={{ backgroundColor: c.value }}
+                            title={c.label}
+                          />
+                        );
+                      })}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-[11px] text-slate-400">Label:</span>
                     <input
                       type="text"
-                      value={newCarLabel}
-                      onChange={(e) => setNewCarLabel(e.target.value)}
+                      value={builderState.currentObstacleLabel || newCarLabel}
+                      onChange={(e) => {
+                        setNewCarLabel(e.target.value);
+                        setBuilderState((prev) => ({
+                          ...prev,
+                          currentObstacleLabel: e.target.value
+                        }));
+                      }}
                       className="bg-slate-950 border border-slate-700 px-2 py-1 rounded text-xs text-white flex-1"
-                      placeholder="e.g. BLUE CAR"
+                      placeholder="e.g. YELLOW CAR"
                     />
                   </div>
                 </div>
@@ -457,6 +477,54 @@ export default function AdminChallengeBuilder({
               <div className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center justify-between">
                 <span>Step 2: Challenge Metadata & Examiner Prompt</span>
                 <span className="text-[10px] text-slate-400 font-semibold">Saloon / Lorry Rules</span>
+              </div>
+
+              {/* Active Driver Vehicle (Player's Car) Selector */}
+              <div className="p-2.5 rounded-lg bg-slate-900 border border-emerald-800/40 flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-emerald-300">
+                    Player Vehicle (Your Car) Color & Label:
+                  </span>
+                  <span className="text-[10px] text-slate-400">
+                    Active: <strong style={{ color: builderState.carColor || '#ef4444' }}>{builderState.carLabel || 'RED CAR'}</strong>
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5">
+                    {CAR_COLORS.map((c) => {
+                      const isSelected = (builderState.carColor || '#ef4444') === c.value;
+                      return (
+                        <button
+                          key={c.value}
+                          type="button"
+                          onClick={() =>
+                            setBuilderState((prev) => ({
+                              ...prev,
+                              carColor: c.value,
+                              carLabel: `${c.label.toUpperCase()} CAR`
+                            }))
+                          }
+                          className={`w-6 h-6 rounded-full border-2 transition ${
+                            isSelected
+                              ? 'ring-2 ring-emerald-400 scale-110 border-white'
+                              : 'opacity-70 border-slate-700 hover:opacity-100'
+                          }`}
+                          style={{ backgroundColor: c.value }}
+                          title={`Select ${c.label} for player car`}
+                        />
+                      );
+                    })}
+                  </div>
+                  <input
+                    type="text"
+                    value={builderState.carLabel || 'RED CAR'}
+                    onChange={(e) =>
+                      setBuilderState((prev) => ({ ...prev, carLabel: e.target.value }))
+                    }
+                    className="bg-slate-950 border border-slate-700 px-2.5 py-1 rounded text-xs text-white flex-1"
+                    placeholder="e.g. BLUE CAR"
+                  />
+                </div>
               </div>
 
               {/* Title & Badge */}

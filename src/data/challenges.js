@@ -53,7 +53,7 @@ export const CHALLENGES = [
     allowParkingShortcut: true,
     requiredWaypoints: [],
     parkedCars: [
-      { id: 'yellow_target_2', x: 350, y: 335, angle: 180, color: '#eab308', label: 'YELLOW CAR' }
+      { id: 'yellow_target_2', x: 376, y: 335, angle: 180, color: '#eab308', label: 'YELLOW CAR' }
     ],
     prompt:
       'Examiner Question (Famous YouTube Exam Trick): "Move the RED CAR from Minor Road North (Lane 1) to stop behind the YELLOW CAR on the Side Access Road. Both the Top Perimeter Westbound road AND Roundabout Ring 4 are CLOSED!"',
@@ -327,7 +327,7 @@ export const CHALLENGES = [
     allowParkingShortcut: false,
     requiredWaypoints: ['FLUSH_BAY_1'],
     parkedCars: [
-      { id: 'red_target_9', x: 350, y: 335, angle: 180, color: '#ef4444', label: 'RED CAR' }
+      { id: 'red_target_9', x: 376, y: 335, angle: 180, color: '#ef4444', label: 'RED CAR' }
     ],
     prompt:
       'Examiner Question: "Move the WHITE CAR from Minor Road South (Lane 1) straight across the roundabout, reverse into Flush Parking Bay #1, then exit forward and stop behind the RED CAR on the Side Access Road."',

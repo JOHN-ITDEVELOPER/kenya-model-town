@@ -213,6 +213,60 @@ export const validateNtsaRoute = (
     );
   }
 
+  // 8. Strict Kenyan Keep-Left Rule Enforcement on Two-Way Single Carriageways
+  let droveOnTwoWay = false;
+  for (let i = 0; i < pathIds.length - 1; i++) {
+    const u = pathIds[i];
+    const v = pathIds[i + 1];
+
+    if (u.startsWith('SIDE_') || u.startsWith('TOP_') || v.startsWith('SIDE_') || v.startsWith('TOP_')) {
+      droveOnTwoWay = true;
+    }
+
+    // Side Access Road (West lane x=350 is Northbound; East lane x=376 is Southbound)
+    if (u.startsWith('SIDE_S_') && v.startsWith('SIDE_S_')) {
+      const uY = BOARD_NODES[u]?.y ?? 0;
+      const vY = BOARD_NODES[v]?.y ?? 0;
+      if (vY < uY) {
+        violations.push(
+          'NTSA Major Traffic Violation (Failed to Keep Left): You drove North in the Southbound lane on the Side Access Road into oncoming traffic! Under Kenyan Highway Code, you must always keep left.'
+        );
+      }
+    }
+    if (u.startsWith('SIDE_N_') && v.startsWith('SIDE_N_')) {
+      const uY = BOARD_NODES[u]?.y ?? 0;
+      const vY = BOARD_NODES[v]?.y ?? 0;
+      if (vY > uY) {
+        violations.push(
+          'NTSA Major Traffic Violation (Failed to Keep Left): You drove South in the Northbound lane on the Side Access Road into oncoming traffic! Under Kenyan Highway Code, you must always keep left.'
+        );
+      }
+    }
+    // Top Perimeter Road (North lane y=76 is Eastbound; South lane y=100 is Westbound)
+    if (u.startsWith('TOP_E_') && v.startsWith('TOP_E_')) {
+      const uX = BOARD_NODES[u]?.x ?? 0;
+      const vX = BOARD_NODES[v]?.x ?? 0;
+      if (vX < uX) {
+        violations.push(
+          'NTSA Major Traffic Violation (Failed to Keep Left): You drove West in the Eastbound lane on the Top Perimeter Road into oncoming traffic! Under Kenyan Highway Code, you must always keep left.'
+        );
+      }
+    }
+    if (u.startsWith('TOP_W_') && v.startsWith('TOP_W_')) {
+      const uX = BOARD_NODES[u]?.x ?? 0;
+      const vX = BOARD_NODES[v]?.x ?? 0;
+      if (vX > uX) {
+        violations.push(
+          'NTSA Major Traffic Violation (Failed to Keep Left): You drove East in the Westbound lane on the Top Perimeter Road into oncoming traffic! Under Kenyan Highway Code, you must always keep left.'
+        );
+      }
+    }
+  }
+
+  if (droveOnTwoWay && !violations.some((v) => v.includes('Keep Left'))) {
+    passedRules.push('Strictly adhered to the Kenyan Keep-Left rule on two-way single carriageways.');
+  }
+
   const uniqueViolations = Array.from(new Set(violations));
   const uniquePassed = Array.from(new Set(passedRules));
   const isValid = uniqueViolations.length === 0;

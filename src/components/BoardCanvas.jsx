@@ -19,6 +19,7 @@ export default function BoardCanvas({
   inspectedNodeId,
   carPose = { x: 0, y: 0, angle: 90, turn: 'none', isReverse: false },
   carColor = '#ef4444',
+  carLabel = 'RED CAR',
   vehicleType = 'saloon',
   currentChallenge = {},
   handleNodeClick,
@@ -278,6 +279,19 @@ export default function BoardCanvas({
                     <rect key={i} x="1014" y={65 + i * 6.5} width="32" height="3.8" fill="#f8fafc" />
                   ))}
                 </g>
+
+                {/* Two-Way Traffic Painted Lane Arrows (Kenyan Keep-Left Discipline) */}
+                {/* Eastbound Lane (y = 76, pointing East) */}
+                <line x1="225" y1="76" x2="255" y2="76" stroke="#f8fafc" strokeWidth="2.2" markerEnd="url(#roadArrowWhite)" />
+                <line x1="925" y1="76" x2="955" y2="76" stroke="#f8fafc" strokeWidth="2.2" markerEnd="url(#roadArrowWhite)" />
+
+                {/* Westbound Lane (y = 100, pointing West) */}
+                <line x1="255" y1="100" x2="225" y2="100" stroke="#f8fafc" strokeWidth="2.2" markerEnd="url(#roadArrowWhite)" />
+                <line x1="955" y1="100" x2="925" y2="100" stroke="#f8fafc" strokeWidth="2.2" markerEnd="url(#roadArrowWhite)" />
+
+                <text x="240" y="56" textAnchor="middle" fill="#86efac" fontSize="8" fontWeight="700" letterSpacing="0.5">
+                  TWO-WAY TRAFFIC • KEEP LEFT
+                </text>
               </g>
 
               {/* 3. FLUSH / UNCONTROLLED PARALLEL PARKING BAYS (y = 112..132, x = 468..696) */}
@@ -298,6 +312,17 @@ export default function BoardCanvas({
                 <line x1="390" y1="111" x2="390" y2="195" stroke="#facc15" strokeWidth="2.5" />
                 <line x1="390" y1="265" x2="390" y2="346" stroke="#facc15" strokeWidth="2.5" />
                 <line x1="363" y1="114" x2="363" y2="342" stroke="#facc15" strokeWidth="1.8" strokeDasharray="6 6" />
+
+                {/* Side Road Painted Directional Arrows (Kenyan Keep-Left) */}
+                {/* Northbound Lane (West side: x = 350, pointing North) */}
+                <line x1="350" y1="285" x2="350" y2="255" stroke="#f8fafc" strokeWidth="2.2" markerEnd="url(#roadArrowWhite)" />
+
+                {/* Southbound Lane (East side: x = 376, pointing South) */}
+                <line x1="376" y1="155" x2="376" y2="185" stroke="#f8fafc" strokeWidth="2.2" markerEnd="url(#roadArrowWhite)" />
+
+                <text x="363" y="104" textAnchor="middle" fill="#86efac" fontSize="8" fontWeight="700">
+                  KEEP LEFT
+                </text>
               </g>
 
               {/* 5. CONTROLLED ANGLE PARKING ZONE (Upper Center Sector, x = 390..728, y = 160..304) */}
@@ -1320,8 +1345,7 @@ export default function BoardCanvas({
                     >
                       {isDragging
                         ? 'STEER CAR • SNAP'
-                        : mode === 'challenges'
-                        ? `${currentChallenge.carLabel} • DRAG ME`
+                        : mode === 'challenges' ? `${carLabel || currentChallenge?.carLabel || 'CAR'} • DRAG ME`
                         : 'YOUR CAR • DRAG ME'}
                     </text>
                   </g>

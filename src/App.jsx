@@ -218,6 +218,8 @@ export default function App() {
     hint: '',
     carColor: '#ef4444',
     carLabel: 'RED CAR',
+    currentObstacleColor: '#eab308',
+    currentObstacleLabel: 'YELLOW CAR',
     vehicleType: 'saloon',
     startNode: 'MW_E_L4_START',
     targetNode: 'MW_W_L4_MID',
@@ -233,7 +235,8 @@ export default function App() {
   const [startNodeId, setStartNodeId] = useState(currentChallenge.startNode);
   const [targetNodeId, setTargetNodeId] = useState(currentChallenge.targetNode);
   const [blockedNodes, setBlockedNodes] = useState(currentChallenge.blockedNodes);
-  const [carColor, setCarColor] = useState(currentChallenge.carColor);
+  const [carColor, setCarColor] = useState(currentChallenge.carColor || '#ef4444');
+  const [carLabel, setCarLabel] = useState(currentChallenge.carLabel || 'RED CAR');
   const [vehicleType, setVehicleType] = useState(currentChallenge.vehicleType);
 
   // Sandbox Click Tool ('path' | 'setStart' | 'setTarget' | 'toggleCone')
@@ -329,6 +332,7 @@ export default function App() {
       setTargetNodeId(ch.targetNode);
       setBlockedNodes(ch.blockedNodes || []);
       setCarColor(ch.carColor || '#ef4444');
+      setCarLabel(ch.carLabel || 'RED CAR');
       setVehicleType(ch.vehicleType || 'saloon');
       setPlottedPath([ch.startNode]);
       setVerdict(null);
@@ -451,8 +455,8 @@ export default function App() {
                 x: n.x,
                 y: n.y,
                 angle: 90,
-                color: '#3b82f6',
-                label: 'OBSTACLE'
+                color: builderState.currentObstacleColor || '#eab308',
+                label: builderState.currentObstacleLabel || 'YELLOW CAR'
               }
             ]
           }));
@@ -1010,7 +1014,8 @@ export default function App() {
             showRuleInspector={showRuleInspector}
             inspectedNodeId={inspectedNodeId}
             carPose={carPose}
-            carColor={carColor}
+            carColor={showAdminBuilder ? (builderState.carColor || '#ef4444') : (currentChallenge?.carColor || carColor)}
+            carLabel={showAdminBuilder ? (builderState.carLabel || 'RED CAR') : (currentChallenge?.carLabel || carLabel)}
             vehicleType={showAdminBuilder ? builderState.vehicleType : vehicleType}
             currentChallenge={currentChallenge}
             handleNodeClick={handleNodeClick}
