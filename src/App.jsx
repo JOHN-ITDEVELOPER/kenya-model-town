@@ -157,7 +157,14 @@ export default function App() {
 
   // Any authenticated instructor signed in with Google has full Challenge Creator rights
   const isAdmin = useMemo(() => {
-    return Boolean(user && user.email);
+    if (!user || !user.email) return false;
+    const userEmail = user.email.trim().toLowerCase();
+    const envAdmin = (import.meta.env?.VITE_ADMIN_EMAIL || import.meta.env?.ADMIN_EMAIL || '').toLowerCase();
+    const adminList = [
+      'johnnjenga7852@gmail.com',
+      ...envAdmin.split(',').map((e) => e.trim())
+    ].filter(Boolean);
+    return adminList.includes(userEmail);
   }, [user]);
 
   useEffect(() => {

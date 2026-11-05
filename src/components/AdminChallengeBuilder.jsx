@@ -189,7 +189,7 @@ export default function AdminChallengeBuilder({
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this custom challenge?')) return;
     try {
-      await deleteCustomChallenge(id);
+      await deleteCustomChallenge(id, user);
       if (onChallengeDeleted) onChallengeDeleted(id);
     } catch (err) {
       alert(`Error deleting challenge: ${err.message}`);

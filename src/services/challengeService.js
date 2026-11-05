@@ -67,7 +67,25 @@ export const fetchCustomChallenges = async () => {
 /**
  * Save or update a custom challenge in Firestore
  */
+/**
+ * Check if the current user has Administrator challenge creation privileges.
+ * Strictly permits johnnjenga7852@gmail.com and any additional emails set in VITE_ADMIN_EMAIL.
+ */
+export const isUserAdmin = (user) => {
+  if (!user || !user.email) return false;
+  const userEmail = user.email.trim().toLowerCase();
+  const envAdmin = (import.meta.env?.VITE_ADMIN_EMAIL || import.meta.env?.ADMIN_EMAIL || '').toLowerCase();
+  const adminList = [
+    'johnnjenga7852@gmail.com',
+    ...envAdmin.split(',').map((e) => e.trim())
+  ].filter(Boolean);
+  return adminList.includes(userEmail);
+};
+
 export const saveCustomChallenge = async (challengeData, user) => {
+  if (!isUserAdmin(user)) {
+    throw new Error('Access Denied: Only the authorized administrator (johnnjenga7852@gmail.com) can create or modify challenges.');
+  }
   if (!isFirebaseConfigured || !db) {
     throw new Error('Firebase is not configured in .env. Please add your credentials.');
   }
@@ -110,7 +128,10 @@ export const saveCustomChallenge = async (challengeData, user) => {
 /**
  * Delete a custom challenge from Firestore
  */
-export const deleteCustomChallenge = async (challengeId) => {
+export const deleteCustomChallenge = async (challengeId, user) => {
+  if (user && !isUserAdmin(user)) {
+    throw new Error('Access Denied: Only the authorized administrator (johnnjenga7852@gmail.com) can delete challenges.');
+  }
   if (!isFirebaseConfigured || !db) {
     throw new Error('Firebase is not configured in .env.');
   }
