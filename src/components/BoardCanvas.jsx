@@ -1159,27 +1159,35 @@ export default function BoardCanvas({
               {/* 13. ACTIVE PLAYER 3D-STYLED TOY CAR (WITH DRAG-TO-STEER INTERACTION) */}
               <g
                 id="player-active-car"
-                transform={`translate(${activeCarX}, ${activeCarY}) scale(${isDragging ? 1.15 : 1})`}
+                transform={`translate(${activeCarX}, ${activeCarY})`}
                 onPointerDown={handleCarPointerDown}
                 style={{
                   pointerEvents: isDriving ? 'none' : 'auto',
                   cursor: isDriving ? 'default' : isDragging ? 'grabbing' : 'grab',
                   touchAction: 'none'
                 }}
-                className="select-none transition-transform duration-75"
+                className="select-none"
               >
-                {/* Tactile Lift / Drag Ring beneath car when grabbed */}
-                {isDragging && (
-                  <circle
-                    r="28"
-                    fill="#4ade80"
-                    fillOpacity="0.18"
-                    stroke="#4ade80"
-                    strokeWidth="2.5"
-                    strokeDasharray="4 2"
-                    className="animate-pulse"
-                  />
-                )}
+                {/* Tactile Lift Scale Group (Isolated from translate to ensure 60fps buttery-smooth driving) */}
+                <g
+                  transform={`scale(${isDragging ? 1.15 : 1})`}
+                  style={{
+                    transformOrigin: '0 0',
+                    transition: isDriving ? 'none' : 'transform 120ms ease-out'
+                  }}
+                >
+                  {/* Tactile Lift / Drag Ring beneath car when grabbed */}
+                  {isDragging && (
+                    <circle
+                      r="28"
+                      fill="#4ade80"
+                      fillOpacity="0.18"
+                      stroke="#4ade80"
+                      strokeWidth="2.5"
+                      strokeDasharray="4 2"
+                      className="animate-pulse"
+                    />
+                  )}
 
                 <g transform={`rotate(${activeCarAngle})`} filter="url(#carShadow)">
                   {/* Headlight Beams */}
@@ -1318,6 +1326,7 @@ export default function BoardCanvas({
                     </text>
                   </g>
                 )}
+                </g>
               </g>
 
               {/* 14. INSTRUCTOR WHITE POINTER STICK */}

@@ -588,10 +588,12 @@ export default function App() {
       }
 
       const totalDist = segments.reduce((acc, s) => acc + s.dist, 0);
-      const speedPxPerMs = isInstructorDemo ? 0.16 : 0.21; // Slower during instructor demonstration
-      const totalDuration = Math.max(950, totalDist / speedPxPerMs);
+      const speedPxPerMs = isInstructorDemo ? 0.17 : 0.23; // Smooth calibrated speed
+      const totalDuration = Math.max(1000, totalDist / speedPxPerMs);
       let startTime = null;
       let lastBlinkerTick = 0;
+      let smoothedAngle = null;
+      let lastIsReverse = null;
 
       const step = (timestamp) => {
         if (!startTime) startTime = timestamp;
@@ -613,16 +615,16 @@ export default function App() {
           accumulated += seg.dist;
         }
 
-        if (isInstructorDemo) {
+        if (isInstructorDemo && solutionCommentarySteps.length > 0) {
           const stepCount = solutionCommentarySteps.length;
           const mappedIdx = Math.min(
             stepCount - 1,
             Math.floor((activeSeg.segIndex / Math.max(1, segments.length)) * stepCount)
           );
-          setActiveDemoStepIdx(mappedIdx);
+          setActiveDemoStepIdx((prev) => (prev === mappedIdx ? prev : mappedIdx));
         }
 
-        let x, y, tangentAngle;
+        let x, y, rawAngle;
 
         if (activeSeg.bothRoundabout && activeSeg.u.ring === activeSeg.v.ring) {
           const r = RING_RADII[activeSeg.u.ring];
@@ -632,16 +634,29 @@ export default function App() {
           const currA = a1 + (a2 - a1) * segT;
           x = RA_CX + r * Math.cos(currA);
           y = RA_CY + r * Math.sin(currA);
-          tangentAngle = (Math.atan2(Math.cos(currA), -Math.sin(currA)) * 180) / Math.PI + 90;
+          const tangent = (Math.atan2(Math.cos(currA), -Math.sin(currA)) * 180) / Math.PI + 90;
+          rawAngle = (tangent % 360 + 360) % 360;
         } else {
           x = activeSeg.u.x + (activeSeg.v.x - activeSeg.u.x) * segT;
           y = activeSeg.u.y + (activeSeg.v.y - activeSeg.u.y) * segT;
-          const rawAngle =
+          const angle =
             (Math.atan2(activeSeg.v.y - activeSeg.u.y, activeSeg.v.x - activeSeg.u.x) * 180) /
               Math.PI +
             90;
-          tangentAngle = activeSeg.isReverse ? rawAngle + 180 : rawAngle;
+          const finalAngle = activeSeg.isReverse ? angle + 180 : angle;
+          rawAngle = (finalAngle % 360 + 360) % 360;
         }
+
+        // Steer smoothly into the direction of travel without angular snapping or reverse flips
+        if (smoothedAngle === null || lastIsReverse !== activeSeg.isReverse) {
+          smoothedAngle = rawAngle;
+          lastIsReverse = activeSeg.isReverse;
+        } else {
+          let diff = ((rawAngle - smoothedAngle + 540) % 360) - 180;
+          smoothedAngle += diff * 0.28;
+        }
+
+        const renderAngle = (smoothedAngle % 360 + 360) % 360;
 
         if (timestamp - lastBlinkerTick > 280) {
           lastBlinkerTick = timestamp;
@@ -655,7 +670,7 @@ export default function App() {
         setCarPose({
           x,
           y,
-          angle: tangentAngle,
+          angle: renderAngle,
           turn: activeSeg.turn,
           isReverse: activeSeg.isReverse
         });
