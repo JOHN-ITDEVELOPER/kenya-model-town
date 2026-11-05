@@ -13,13 +13,23 @@ import {
   EyeOff,
   MousePointer,
   BookOpen,
-  Ban
+  Ban,
+  LogIn,
+  LogOut,
+  ShieldCheck,
+  User as UserIcon,
+  PlusCircle,
+  HelpCircle
 } from 'lucide-react';
+import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
+import { auth, googleProvider, isFirebaseConfigured, ADMIN_EMAIL } from './services/firebase';
+import { subscribeToCustomChallenges } from './services/challengeService';
 import { NODES, BOARD_NODES, EDGES, ALL_EDGES, RA_CX, RA_CY, RING_RADII } from './data/boardGraph';
 import { CHALLENGES, NTSA_CHALLENGES } from './data/challenges';
 import { validateNtsaRoute, findShortestValidNtsaRoute } from './engine/bfsSolver';
 import BoardCanvas from './components/BoardCanvas';
 import InstructorPanel from './components/InstructorPanel';
+import AdminChallengeBuilder from './components/AdminChallengeBuilder';
 
 const useDrivingSound = (muted) => {
   const audioCtxRef = useRef(null);
@@ -716,6 +726,32 @@ export default function App() {
             </div>
           </div>
 
+          {/* Admin Challenge Builder Dock when active */}
+          {showAdminBuilder && isAdmin && (
+            <AdminChallengeBuilder
+              user={user}
+              customChallenges={customChallenges}
+              onChallengeCreated={(saved) => {
+                const newIdx = allChallenges.length;
+                loadChallenge(newIdx);
+              }}
+              onChallengeDeleted={(id) => {
+                loadChallenge(0);
+              }}
+              onSelectChallengeToPlay={(ch) => {
+                const targetIdx = allChallenges.findIndex((c) => c.id === ch.id);
+                if (targetIdx !== -1) {
+                  loadChallenge(targetIdx);
+                  setShowAdminBuilder(false);
+                }
+              }}
+              builderState={builderState}
+              setBuilderState={setBuilderState}
+              builderTool={builderTool}
+              setBuilderTool={setBuilderTool}
+            />
+          )}
+
           {/* BoardCanvas Component */}
           <BoardCanvas
             mode={mode}
@@ -726,16 +762,17 @@ export default function App() {
             solutionCommentarySteps={solutionCommentarySteps}
             officialSolutionPath={officialSolutionPath}
             plottedPath={plottedPath}
-            startNodeId={startNodeId}
-            targetNodeId={targetNodeId}
-            blockedNodes={blockedNodes}
+            startNodeId={showAdminBuilder ? builderState.startNode : startNodeId}
+            targetNodeId={showAdminBuilder ? builderState.targetNode : targetNodeId}
+            blockedNodes={showAdminBuilder ? builderState.blockedNodes : blockedNodes}
+            parkedCars={showAdminBuilder ? builderState.parkedCars : (currentChallenge?.parkedCars || [])}
             showWaypoints={showWaypoints}
             validNextNodeIds={validNextNodeIds}
             showRuleInspector={showRuleInspector}
             inspectedNodeId={inspectedNodeId}
             carPose={carPose}
             carColor={carColor}
-            vehicleType={vehicleType}
+            vehicleType={showAdminBuilder ? builderState.vehicleType : vehicleType}
             currentChallenge={currentChallenge}
             handleNodeClick={handleNodeClick}
             lastPlottedNodeId={lastPlottedNodeId}
@@ -746,6 +783,7 @@ export default function App() {
         {/* InstructorPanel Component */}
         <InstructorPanel
           mode={mode}
+          challengesList={allChallenges}
           activeChallengeIdx={activeChallengeIdx}
           currentChallenge={currentChallenge}
           completedChallenges={completedChallenges}

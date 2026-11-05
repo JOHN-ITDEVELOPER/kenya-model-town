@@ -23,7 +23,8 @@ export default function BoardCanvas({
   currentChallenge = {},
   handleNodeClick,
   lastPlottedNodeId: propLastPlottedNodeId,
-  isDriving = false
+  isDriving = false,
+  parkedCars
 }) {
   const lastPlottedNodeId = propLastPlottedNodeId !== undefined
     ? propLastPlottedNodeId
@@ -740,8 +741,7 @@ export default function BoardCanvas({
               </g>
 
               {/* 10. PARKED REFERENCE TOY CARS ("Move Car X Behind Car Y") */}
-              {mode === 'challenges' &&
-                currentChallenge.parkedCars.map((pc) => (
+              {(parkedCars || currentChallenge?.parkedCars || []).map((pc) => (
                   <g key={pc.id} transform={`translate(${pc.x}, ${pc.y})`}>
                     <g transform={`rotate(${pc.angle})`} filter="url(#carShadow)">
                       <rect

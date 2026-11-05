@@ -1,21 +1,18 @@
 import React from 'react';
 import {
   Award,
-  MousePointer,
-  Navigation,
-  Flag,
-  Ban,
-  Car,
-  Truck,
+  Check,
   HelpCircle,
   BookOpen,
   ChevronRight,
-  Check,
+  MousePointer,
+  Navigation,
+  Car,
+  Ban,
   CheckCircle2,
-  ShieldAlert,
   AlertTriangle,
+  RotateCcw,
   Sparkles,
-  Footprints,
   Play,
   Info
 } from 'lucide-react';
@@ -25,6 +22,7 @@ export default function InstructorPanel({
   mode,
   activeChallengeIdx,
   currentChallenge,
+  challengesList = NTSA_CHALLENGES,
   completedChallenges = [],
   loadChallenge,
   showHint,
@@ -54,7 +52,7 @@ export default function InstructorPanel({
                   NTSA Practical Exam Scenarios
                 </span>
                 <span className="text-xs font-bold text-slate-400">
-                  Question {currentChallenge.number} of {NTSA_CHALLENGES.length}
+                  Question {activeChallengeIdx + 1} of {challengesList.length}
                 </span>
               </div>
 
@@ -115,7 +113,7 @@ export default function InstructorPanel({
                     </button>
                   </div>
 
-                  {activeChallengeIdx < NTSA_CHALLENGES.length - 1 && (
+                  {activeChallengeIdx < challengesList.length - 1 && (
                     <button
                       onClick={() => loadChallenge(activeChallengeIdx + 1)}
                       className="text-xs font-bold text-emerald-400 hover:text-emerald-300 flex items-center gap-0.5"
@@ -253,7 +251,7 @@ export default function InstructorPanel({
 
                 {verdict.isValid &&
                   mode === 'challenges' &&
-                  activeChallengeIdx < NTSA_CHALLENGES.length - 1 && (
+                  activeChallengeIdx < challengesList.length - 1 && (
                     <button
                       onClick={() => loadChallenge(activeChallengeIdx + 1)}
                       className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-extrabold transition"
@@ -411,6 +409,6 @@ export default function InstructorPanel({
               </div>
             </div>
           </div>
-        </div>
+    </div>
   );
 }
