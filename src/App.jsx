@@ -122,10 +122,100 @@ const useDrivingSound = (muted) => {
  * ============================================================================
  */
 export default function App() {
+  // Firestore Custom Challenges
+  const [customChallenges, setCustomChallenges] = useState([]);
+
+  // Subscribe to Cloud Firestore custom challenges in real-time
+  useEffect(() => {
+    const unsubscribe = subscribeToCustomChallenges(
+      (challenges) => {
+        setCustomChallenges(challenges);
+      },
+      (err) => {
+        console.warn('Custom challenges subscription warning:', err);
+      }
+    );
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, []);
+
+  // Combined challenges list: 10 built-in NTSA + custom Firestore challenges
+  const allChallenges = useMemo(() => {
+    return [...NTSA_CHALLENGES, ...customChallenges];
+  }, [customChallenges]);
+
   // Active Challenge or Sandbox State
   const [mode, setMode] = useState('challenges'); // 'challenges' | 'sandbox'
   const [activeChallengeIdx, setActiveChallengeIdx] = useState(0);
-  const currentChallenge = NTSA_CHALLENGES[activeChallengeIdx];
+  const currentChallenge = allChallenges[activeChallengeIdx] || allChallenges[0] || NTSA_CHALLENGES[0];
+
+  // Firebase Auth State
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [showAdminBuilder, setShowAdminBuilder] = useState(false);
+
+  const isAdmin = useMemo(() => {
+    if (!user || !user.email) return false;
+    if (!ADMIN_EMAIL) return true; // Allow signed-in user if no email restriction set
+    return user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+  }, [user]);
+
+  useEffect(() => {
+    if (!isFirebaseConfigured || !auth) {
+      setAuthLoading(false);
+      return;
+    }
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      setAuthLoading(false);
+    });
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, []);
+
+  const handleGoogleSignIn = async () => {
+    if (!isFirebaseConfigured || !auth || !googleProvider) {
+      alert('Firebase credentials not set in .env. Please configure your Firebase keys to sign in.');
+      return;
+    }
+    try {
+      await signInWithPopup(auth, googleProvider);
+    } catch (err) {
+      console.error('Sign in error:', err);
+      alert(`Google Sign In failed: ${err.message}`);
+    }
+  };
+
+  const handleSignOut = async () => {
+    if (auth) {
+      await signOut(auth);
+      setShowAdminBuilder(false);
+    }
+  };
+
+  // Admin Challenge Builder State
+  const [builderTool, setBuilderTool] = useState('start');
+  const [builderState, setBuilderState] = useState({
+    id: null,
+    title: '',
+    badge: 'Instructor Custom',
+    ruleApplied: 'Rule 1: Use the shortest and most correct route without using parking.',
+    prompt: '',
+    hint: '',
+    carColor: '#ef4444',
+    carLabel: 'RED CAR',
+    vehicleType: 'saloon',
+    startNode: 'MW_E_L4_START',
+    targetNode: 'MW_W_L4_MID',
+    blockedNodes: [],
+    parkedCars: [],
+    allowParkingShortcut: false,
+    requiredWaypoints: [],
+    solutionPath: [],
+    solutionSteps: []
+  });
 
   // Board State
   const [startNodeId, setStartNodeId] = useState(currentChallenge.startNode);
@@ -221,28 +311,30 @@ export default function App() {
     (idx) => {
       if (animRef.current) cancelAnimationFrame(animRef.current);
       setIsDriving(false);
-      const ch = NTSA_CHALLENGES[idx];
+      const ch = allChallenges[idx] || allChallenges[0] || NTSA_CHALLENGES[0];
       setActiveChallengeIdx(idx);
       setStartNodeId(ch.startNode);
       setTargetNodeId(ch.targetNode);
-      setBlockedNodes(ch.blockedNodes);
-      setCarColor(ch.carColor);
-      setVehicleType(ch.vehicleType);
+      setBlockedNodes(ch.blockedNodes || []);
+      setCarColor(ch.carColor || '#ef4444');
+      setVehicleType(ch.vehicleType || 'saloon');
       setPlottedPath([ch.startNode]);
       setVerdict(null);
       setShowHint(false);
       setShowSolutionGuide(false);
       setActiveDemoStepIdx(null);
       const startNode = BOARD_NODES[ch.startNode];
-      setCarPose({
-        x: startNode.x,
-        y: startNode.y,
-        angle: getInitialNodeAngle(ch.startNode),
-        turn: 'none',
-        isReverse: false
-      });
+      if (startNode) {
+        setCarPose({
+          x: startNode.x,
+          y: startNode.y,
+          angle: getInitialNodeAngle(ch.startNode),
+          turn: 'none',
+          isReverse: false
+        });
+      }
     },
-    [getInitialNodeAngle]
+    [allChallenges, getInitialNodeAngle]
   );
 
   // Reset current route back to startNodeId
@@ -317,6 +409,46 @@ export default function App() {
   const handleNodeClick = (nodeId) => {
     if (isDriving) return;
     setInspectedNodeId(nodeId);
+
+    // If Admin Builder mode is active, handle builder placement tools
+    if (showAdminBuilder) {
+      if (builderTool === 'start') {
+        setBuilderState((prev) => ({ ...prev, startNode: nodeId }));
+        setPlottedPath([nodeId]);
+        playClick(720);
+      } else if (builderTool === 'target') {
+        setBuilderState((prev) => ({ ...prev, targetNode: nodeId }));
+        playClick(840);
+      } else if (builderTool === 'barrier') {
+        setBuilderState((prev) => ({
+          ...prev,
+          blockedNodes: prev.blockedNodes.includes(nodeId)
+            ? prev.blockedNodes.filter((id) => id !== nodeId)
+            : [...prev.blockedNodes, nodeId]
+        }));
+        playClick(500);
+      } else if (builderTool === 'obstacle') {
+        const n = BOARD_NODES[nodeId];
+        if (n) {
+          setBuilderState((prev) => ({
+            ...prev,
+            parkedCars: [
+              ...prev.parkedCars,
+              {
+                id: `car_${Date.now()}`,
+                x: n.x,
+                y: n.y,
+                angle: 90,
+                color: '#3b82f6',
+                label: 'OBSTACLE'
+              }
+            ]
+          }));
+          playClick(600);
+        }
+      }
+      return;
+    }
 
     // If Rule Inspector mode is active, just inspect the node
     if (showRuleInspector) {
@@ -687,6 +819,65 @@ export default function App() {
           >
             {muted ? <VolumeX className="w-4 h-4 text-rose-400" /> : <Volume2 className="w-4 h-4 text-emerald-400" />}
           </button>
+
+          {/* Firebase Authentication & Admin Dashboard Button */}
+          <div className="flex items-center gap-2 pl-1 border-l border-slate-800">
+            {user ? (
+              <div className="flex items-center gap-2">
+                {isAdmin && (
+                  <button
+                    onClick={() => setShowAdminBuilder((prev) => !prev)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition flex items-center gap-1.5 ${
+                      showAdminBuilder
+                        ? 'bg-amber-500 border-amber-300 text-slate-950 font-black shadow-lg shadow-amber-500/20'
+                        : 'bg-amber-500/20 border-amber-400/40 text-amber-300 hover:bg-amber-500/30'
+                    }`}
+                  >
+                    <PlusCircle className="w-3.5 h-3.5" />
+                    {showAdminBuilder ? 'Close Creator' : 'Create Challenge'}
+                  </button>
+                )}
+                <div
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 text-xs"
+                  title={user.email}
+                >
+                  {user.photoURL ? (
+                    <img
+                      src={user.photoURL}
+                      alt="avatar"
+                      className="w-5 h-5 rounded-full object-cover"
+                    />
+                  ) : (
+                    <UserIcon className="w-3.5 h-3.5 text-emerald-400" />
+                  )}
+                  <span className="font-bold text-slate-200 hidden sm:inline truncate max-w-[100px]">
+                    {user.displayName?.split(' ')[0] || user.email?.split('@')[0]}
+                  </span>
+                  {isAdmin && (
+                    <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
+                      Admin
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={handleSignOut}
+                  className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700"
+                  title="Sign Out"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleGoogleSignIn}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 flex items-center gap-1.5 shadow transition"
+                title="Sign in with Google to access Instructor Admin features"
+              >
+                <LogIn className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Instructor Sign In</span>
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
