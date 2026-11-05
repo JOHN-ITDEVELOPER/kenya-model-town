@@ -18,7 +18,8 @@ import {
   Flag,
   Truck,
   ShieldAlert,
-  Footprints
+  Footprints,
+  PlusCircle
 } from 'lucide-react';
 import { CHALLENGES, NTSA_CHALLENGES } from '../data/challenges';
 
@@ -43,7 +44,11 @@ export default function InstructorPanel({
   solutionCommentarySteps = [],
   activeDemoStepIdx,
   showRuleInspector,
-  inspectedNode
+  inspectedNode,
+  user,
+  isAdmin,
+  showAdminBuilder,
+  setShowAdminBuilder
 }) {
   return (
 <div className="xl:col-span-4 flex flex-col gap-3">
@@ -59,6 +64,21 @@ export default function InstructorPanel({
                   Question {activeChallengeIdx + 1} of {challengesList.length}
                 </span>
               </div>
+
+              {/* Quick Challenge Creator Toggle */}
+              {user && isAdmin && (
+                <button
+                  onClick={() => setShowAdminBuilder && setShowAdminBuilder((prev) => !prev)}
+                  className={`w-full py-2 px-3 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-2 ${
+                    showAdminBuilder
+                      ? 'bg-amber-500 border-amber-300 text-slate-950 font-black shadow-lg shadow-amber-500/20'
+                      : 'bg-amber-500/20 border-amber-400/40 text-amber-300 hover:bg-amber-500/30'
+                  }`}
+                >
+                  <PlusCircle className="w-4 h-4 text-amber-400" />
+                  <span>{showAdminBuilder ? 'Close Challenge Creator' : '+ Create Custom Challenge'}</span>
+                </button>
+              )}
 
               {/* 10 Challenge Pills (2 rows of 5) */}
               <div className="grid grid-cols-5 gap-1.5">
@@ -83,6 +103,38 @@ export default function InstructorPanel({
                   );
                 })}
               </div>
+
+              {/* Custom Challenges List (C1, C2...) */}
+              {challengesList.length > NTSA_CHALLENGES.length && (
+                <div className="pt-2 border-t border-slate-800 flex flex-col gap-1.5">
+                  <span className="text-[10px] font-extrabold uppercase text-amber-400 tracking-wider">
+                    Custom Challenges ({challengesList.length - NTSA_CHALLENGES.length}):
+                  </span>
+                  <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1">
+                    {challengesList.slice(NTSA_CHALLENGES.length).map((ch, cIdx) => {
+                      const actualIdx = NTSA_CHALLENGES.length + cIdx;
+                      const isActive = actualIdx === activeChallengeIdx;
+                      return (
+                        <button
+                          key={ch.id || `custom_${cIdx}`}
+                          onClick={() => loadChallenge(actualIdx)}
+                          className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition flex items-center gap-1.5 truncate max-w-[200px] ${
+                            isActive
+                              ? 'bg-amber-500 border-amber-300 text-slate-950 font-black shadow-md'
+                              : 'bg-slate-800 border-slate-700 text-amber-300 hover:bg-slate-700'
+                          }`}
+                          title={ch.title}
+                        >
+                          <span className="px-1 py-0.2 rounded bg-amber-950/80 text-[10px] text-amber-300 font-extrabold">
+                            C{cIdx + 1}
+                          </span>
+                          <span className="truncate">{ch.title}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Active Challenge Prompt */}
               <div className="bg-slate-950/90 border border-slate-800 rounded-xl p-3.5 space-y-2">

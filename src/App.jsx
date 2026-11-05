@@ -155,10 +155,9 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const [showAdminBuilder, setShowAdminBuilder] = useState(false);
 
+  // Any authenticated instructor signed in with Google has full Challenge Creator rights
   const isAdmin = useMemo(() => {
-    if (!user || !user.email) return false;
-    if (!ADMIN_EMAIL) return true; // Allow signed-in user if no email restriction set
-    return user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+    return Boolean(user && user.email);
   }, [user]);
 
   useEffect(() => {
@@ -1009,6 +1008,10 @@ export default function App() {
         <InstructorPanel
           mode={mode}
           challengesList={allChallenges}
+          user={user}
+          isAdmin={isAdmin}
+          showAdminBuilder={showAdminBuilder}
+          setShowAdminBuilder={setShowAdminBuilder}
           activeChallengeIdx={activeChallengeIdx}
           currentChallenge={currentChallenge}
           completedChallenges={completedChallenges}
