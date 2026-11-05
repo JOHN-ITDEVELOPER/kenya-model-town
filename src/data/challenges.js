@@ -234,9 +234,9 @@ export const CHALLENGES = [
   {
     id: 'challenge_7',
     number: 7,
-    title: 'Green Car Behind White Car (270° Q-Turn + Median U-Turn)',
-    badge: '270° Q-Turn',
-    ruleApplied: 'Combining a 270° Q-Turn on Ring 4 with a Median Crossover U-Turn when direct exits are closed.',
+    title: 'Green Car Behind White Car (Shift Before Roundabout + Far-West U-Turn)',
+    badge: 'No Roundabout Lane Change',
+    ruleApplied: 'NTSA Rule: Never change lanes inside the roundabout! Shift before entering (on broken lines) to select the correct ring.',
     carColor: '#22c55e',
     carLabel: 'GREEN CAR',
     vehicleType: 'saloon',
@@ -250,7 +250,7 @@ export const CHALLENGES = [
     ],
     prompt:
       'Examiner Question: "Move the GREEN CAR from Major Road East (Westbound Lane 4) to stop behind the WHITE CAR on Major Road West (Eastbound Lane 4). Major Westbound Exit L4 and East Gap E1 are CLOSED!"',
-    hint: 'Since you cannot exit directly onto Major Westbound Lane 4 (MW_W_L4_EXIT is closed), exit earlier onto Minor Road South Lane 3 (MS_S_L3_EXIT), use the Minor South Median Gap (GAP_M1) to U-turn into Minor Northbound Lane 3, enter Ring 4 (RA_SW_L4), and do a 270° Q-turn to MW_W_L3_MID or use the open West route!',
+    hint: 'Because Major Westbound Exit Lane 4 is closed, you cannot use Ring 4. Shift into Lane 3 BEFORE entering the roundabout (on the broken white lines), proceed 0° Straight through Ring 3 to exit, and use Far-West Median Gap W2 to reach the target behind the White Car without changing lanes on the roundabout!',
     solutionPath: [
       'ME_W_L4_START',
       'ME_W_L3_ENTRY',

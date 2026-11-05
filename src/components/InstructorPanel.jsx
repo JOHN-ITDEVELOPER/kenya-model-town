@@ -369,6 +369,14 @@ export default function InstructorPanel({
               <p className="text-[11px] text-slate-300 leading-relaxed">{inspectedNode.ruleInfo}</p>
             </div>
 
+            {/* Strict NTSA Roundabout Rule */}
+            <div className="p-2.5 rounded-xl bg-rose-950/70 border border-rose-500/50 text-rose-200 text-[11px] font-semibold flex items-center gap-2">
+              <Ban className="w-4 h-4 text-rose-400 shrink-0" />
+              <span>
+                <strong className="text-rose-300">CRITICAL NTSA RULE:</strong> Never change lanes on a roundabout! Once you enter a concentric ring, you are strictly prohibited from switching rings until your exit.
+              </span>
+            </div>
+
             {/* 3 Golden Rules */}
             <div className="bg-slate-950/70 border border-slate-800 rounded-xl p-2.5 space-y-1 text-[11px]">
               <div className="font-extrabold text-emerald-400 uppercase tracking-wider">

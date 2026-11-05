@@ -310,7 +310,7 @@ export default function App() {
   const lastPlottedNodeId = plottedPath[plottedPath.length - 1];
   const validNextNodeIds = useMemo(() => {
     if (!lastPlottedNodeId) return [];
-    return ALL_EDGES.filter((e) => e.from === lastPlottedNodeId).map((e) => e.to);
+    return ALL_EDGES.filter((e) => e.from === lastPlottedNodeId && e.isLegal).map((e) => e.to);
   }, [lastPlottedNodeId]);
 
   // Handle clicking a node on the board
@@ -361,6 +361,27 @@ export default function App() {
     }
 
     // Standard Path Plotting Mode
+    // STRICT NTSA ENFORCEMENT: Never allow changing lanes on the roundabout
+    const currNode = BOARD_NODES[lastPlottedNodeId];
+    const clickedNode = BOARD_NODES[nodeId];
+    if (
+      currNode &&
+      clickedNode &&
+      currNode.zone === 'roundabout' &&
+      clickedNode.zone === 'roundabout' &&
+      currNode.ring !== clickedNode.ring
+    ) {
+      setVerdict({
+        isValid: false,
+        score: 0,
+        violations: [
+          `NTSA Instant Exam Disqualification: You cannot change lanes inside the roundabout (Ring ${currNode.ring} → Ring ${clickedNode.ring})! Once you enter a concentric ring, you are strictly prohibited from switching rings until your exit.`
+        ],
+        passedRules: []
+      });
+      playVerdictSound(false);
+      return;
+    }
     // 1. If clicking the second-to-last node, undo the last step
     if (plottedPath.length >= 2 && plottedPath[plottedPath.length - 2] === nodeId) {
       setPlottedPath((prev) => prev.slice(0, -1));

@@ -118,3 +118,4 @@ export const deleteCustomChallenge = async (challengeId) => {
   await deleteDoc(docRef);
   return challengeId;
 };
+
