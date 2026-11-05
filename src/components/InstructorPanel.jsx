@@ -14,7 +14,11 @@ import {
   RotateCcw,
   Sparkles,
   Play,
-  Info
+  Info,
+  Flag,
+  Truck,
+  ShieldAlert,
+  Footprints
 } from 'lucide-react';
 import { CHALLENGES, NTSA_CHALLENGES } from '../data/challenges';
 
