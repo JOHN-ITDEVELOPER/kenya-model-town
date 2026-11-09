@@ -48,6 +48,12 @@ export const NODES = {
     ruleInfo: 'Major Road Lane 4 (Innermost Right): Allowed 90° Right (3rd exit), 180° U-Turn (4th exit), or 270° Left (5th exit) via Roundabout Lane 4.'
   },
 
+  // PRE column (x = 240, midway between START x=115 and MID x=364)
+  MW_E_L1_PRE: { id: 'MW_E_L1_PRE', x: 240, y: 358, label: 'Major West L1 (Pre)', zone: 'major_west', lane: 1, road: 'Major Road West (Lane 1)', ruleInfo: 'Major Road Lane 1: Broken line zone. Maintain lane or indicate right to shift.' },
+  MW_E_L2_PRE: { id: 'MW_E_L2_PRE', x: 240, y: 382, label: 'Major West L2 (Pre)', zone: 'major_west', lane: 2, road: 'Major Road West (Lane 2)', ruleInfo: 'Major Road Lane 2: Broken line zone. Maintain lane or shift across broken lines.' },
+  MW_E_L3_PRE: { id: 'MW_E_L3_PRE', x: 240, y: 406, label: 'Major West L3 (Pre)', zone: 'major_west', lane: 3, road: 'Major Road West (Lane 3)', ruleInfo: 'Major Road Lane 3: Broken line zone. Maintain lane or shift across broken lines.' },
+  MW_E_L4_PRE: { id: 'MW_E_L4_PRE', x: 240, y: 430, label: 'Major West L4 (Pre)', zone: 'major_west', lane: 4, road: 'Major Road West (Lane 4)', ruleInfo: 'Major Road Lane 4: Broken line zone. Proceed to roundabout or gap.' },
+
   MW_E_L1_MID: {
     id: 'MW_E_L1_MID', x: 364, y: 358, label: 'Major West L1 (Side Jct)',
     zone: 'major_west', lane: 1, road: 'Major Road West (Lane 1)',
@@ -56,7 +62,7 @@ export const NODES = {
   MW_E_L2_MID: {
     id: 'MW_E_L2_MID', x: 364, y: 382, label: 'Major West L2 (Mid)',
     zone: 'major_west', lane: 2, road: 'Major Road West (Lane 2)',
-    ruleInfo: 'Major Road Lane 2: Proceed straight towards Roundabout Lane 2. No lane changing across solid lines.'
+    ruleInfo: 'Major Road Lane 2: Proceed straight towards Roundabout Lane 2. Shift lanes across broken lines.'
   },
   MW_E_L3_MID: {
     id: 'MW_E_L3_MID', x: 364, y: 406, label: 'Major West L3 (Mid)',
@@ -68,6 +74,18 @@ export const NODES = {
     zone: 'major_west', lane: 4, road: 'Major Road West (Lane 4)',
     ruleInfo: 'Major Road Lane 4: Can use Median Gap W1 for an early U-turn or proceed to Roundabout Lane 4.'
   },
+
+  // SHIFT column (x = 445, broken line lane change zone between MID and ENTRY)
+  MW_E_L1_SHIFT: { id: 'MW_E_L1_SHIFT', x: 445, y: 358, label: 'Major West L1 (Shift)', zone: 'major_west', lane: 1, road: 'Major Road West (Lane 1)', ruleInfo: 'Major Road Lane 1: Indicate right to shift towards Lane 2, 3, or 4 across broken lines.' },
+  MW_E_L2_SHIFT: { id: 'MW_E_L2_SHIFT', x: 445, y: 382, label: 'Major West L2 (Shift)', zone: 'major_west', lane: 2, road: 'Major Road West (Lane 2)', ruleInfo: 'Major Road Lane 2: Can shift towards Lane 1 or Lane 3/4 before the solid approach line.' },
+  MW_E_L3_SHIFT: { id: 'MW_E_L3_SHIFT', x: 445, y: 406, label: 'Major West L3 (Shift)', zone: 'major_west', lane: 3, road: 'Major Road West (Lane 3)', ruleInfo: 'Major Road Lane 3: Shift to Lane 4 or proceed to Roundabout Lane 3.' },
+  MW_E_L4_SHIFT: { id: 'MW_E_L4_SHIFT', x: 445, y: 430, label: 'Major West L4 (Shift)', zone: 'major_west', lane: 4, road: 'Major Road West (Lane 4)', ruleInfo: 'Major Road Lane 4: Approach to Roundabout Lane 4 or Median Gap W1.' },
+
+  // APP column (x = 530, approach before solid stop line)
+  MW_E_L1_APP: { id: 'MW_E_L1_APP', x: 530, y: 358, label: 'Major West L1 (Approach)', zone: 'major_west', lane: 1, road: 'Major Road West (Lane 1)', ruleInfo: 'Major Road Lane 1: Final approach to Roundabout Ring 1.' },
+  MW_E_L2_APP: { id: 'MW_E_L2_APP', x: 530, y: 382, label: 'Major West L2 (Approach)', zone: 'major_west', lane: 2, road: 'Major Road West (Lane 2)', ruleInfo: 'Major Road Lane 2: Final approach to Roundabout Ring 2.' },
+  MW_E_L3_APP: { id: 'MW_E_L3_APP', x: 530, y: 406, label: 'Major West L3 (Approach)', zone: 'major_west', lane: 3, road: 'Major Road West (Lane 3)', ruleInfo: 'Major Road Lane 3: Final approach to Roundabout Ring 3.' },
+  MW_E_L4_APP: { id: 'MW_E_L4_APP', x: 530, y: 430, label: 'Major West L4 (Approach)', zone: 'major_west', lane: 4, road: 'Major Road West (Lane 4)', ruleInfo: 'Major Road Lane 4: Final approach to Roundabout Ring 4.' },
 
   MW_E_L1_ENTRY: {
     id: 'MW_E_L1_ENTRY', x: 615, y: 358, label: 'Major West L1 Entry',
@@ -112,6 +130,18 @@ export const NODES = {
     ruleInfo: 'Major Road Westbound Outermost Lane 1: Receives traffic from Roundabout Ring 1.'
   },
 
+  // Westbound APP column (x = 530)
+  MW_W_L4_APP: { id: 'MW_W_L4_APP', x: 530, y: 510, label: 'Major Westbound L4 (Approach)', zone: 'major_west', lane: 4, road: 'Major Road Westbound (Lane 4)', ruleInfo: 'Westbound Lane 4: Exiting roundabout. Can use Gap W1 or shift lanes.' },
+  MW_W_L3_APP: { id: 'MW_W_L3_APP', x: 530, y: 534, label: 'Major Westbound L3 (Approach)', zone: 'major_west', lane: 3, road: 'Major Road Westbound (Lane 3)', ruleInfo: 'Westbound Lane 3: Exiting roundabout. Broken lines allow lane shifting.' },
+  MW_W_L2_APP: { id: 'MW_W_L2_APP', x: 530, y: 558, label: 'Major Westbound L2 (Approach)', zone: 'major_west', lane: 2, road: 'Major Road Westbound (Lane 2)', ruleInfo: 'Westbound Lane 2: Exiting roundabout.' },
+  MW_W_L1_APP: { id: 'MW_W_L1_APP', x: 530, y: 582, label: 'Major Westbound L1 (Approach)', zone: 'major_west', lane: 1, road: 'Major Road Westbound (Lane 1)', ruleInfo: 'Westbound Lane 1: Exiting roundabout.' },
+
+  // Westbound SHIFT column (x = 445)
+  MW_W_L4_SHIFT: { id: 'MW_W_L4_SHIFT', x: 445, y: 510, label: 'Major Westbound L4 (Shift)', zone: 'major_west', lane: 4, road: 'Major Road Westbound (Lane 4)', ruleInfo: 'Westbound Lane 4: Broken lines zone.' },
+  MW_W_L3_SHIFT: { id: 'MW_W_L3_SHIFT', x: 445, y: 534, label: 'Major Westbound L3 (Shift)', zone: 'major_west', lane: 3, road: 'Major Road Westbound (Lane 3)', ruleInfo: 'Westbound Lane 3: Broken lines zone.' },
+  MW_W_L2_SHIFT: { id: 'MW_W_L2_SHIFT', x: 445, y: 558, label: 'Major Westbound L2 (Shift)', zone: 'major_west', lane: 2, road: 'Major Road Westbound (Lane 2)', ruleInfo: 'Westbound Lane 2: Broken lines zone.' },
+  MW_W_L1_SHIFT: { id: 'MW_W_L1_SHIFT', x: 445, y: 582, label: 'Major Westbound L1 (Shift)', zone: 'major_west', lane: 1, road: 'Major Road Westbound (Lane 1)', ruleInfo: 'Westbound Lane 1: Broken lines zone.' },
+
   MW_W_L4_MID: {
     id: 'MW_W_L4_MID', x: 364, y: 510, label: 'Major Westbound L4 (Mid)',
     zone: 'major_west', lane: 4, road: 'Major Road Westbound (Lane 4)',
@@ -132,6 +162,12 @@ export const NODES = {
     zone: 'major_west', lane: 1, road: 'Major Road Westbound (Lane 1)',
     ruleInfo: 'Westbound Outermost Lane 1.'
   },
+
+  // Westbound PRE column (x = 240)
+  MW_W_L4_PRE: { id: 'MW_W_L4_PRE', x: 240, y: 510, label: 'Major Westbound L4 (Pre)', zone: 'major_west', lane: 4, road: 'Major Road Westbound (Lane 4)', ruleInfo: 'Westbound Lane 4 approaching far west.' },
+  MW_W_L3_PRE: { id: 'MW_W_L3_PRE', x: 240, y: 534, label: 'Major Westbound L3 (Pre)', zone: 'major_west', lane: 3, road: 'Major Road Westbound (Lane 3)', ruleInfo: 'Westbound Lane 3 approaching far west.' },
+  MW_W_L2_PRE: { id: 'MW_W_L2_PRE', x: 240, y: 558, label: 'Major Westbound L2 (Pre)', zone: 'major_west', lane: 2, road: 'Major Road Westbound (Lane 2)', ruleInfo: 'Westbound Lane 2 approaching far west.' },
+  MW_W_L1_PRE: { id: 'MW_W_L1_PRE', x: 240, y: 582, label: 'Major Westbound L1 (Pre)', zone: 'major_west', lane: 1, road: 'Major Road Westbound (Lane 1)', ruleInfo: 'Westbound Lane 1 approaching far west.' },
 
   MW_W_L4_END: {
     id: 'MW_W_L4_END', x: 115, y: 510, label: 'Major Westbound L4 (End)',
@@ -198,6 +234,11 @@ export const NODES = {
     ruleInfo: 'Major Road Eastbound Innermost Lane 4 Exit (Receives 90° Right turn from Minor Road South Lane 3 via Ring 4).'
   },
 
+  ME_E_L1_MID: { id: 'ME_E_L1_MID', x: 1080, y: 358, label: 'Major East L1 (Mid)', zone: 'major_east', lane: 1, road: 'Major Road Eastbound (Lane 1)', ruleInfo: 'Major Road Eastbound Lane 1 Intermediate.' },
+  ME_E_L2_MID: { id: 'ME_E_L2_MID', x: 1080, y: 382, label: 'Major East L2 (Mid)', zone: 'major_east', lane: 2, road: 'Major Road Eastbound (Lane 2)', ruleInfo: 'Major Road Eastbound Lane 2 Intermediate.' },
+  ME_E_L3_MID: { id: 'ME_E_L3_MID', x: 1080, y: 406, label: 'Major East L3 (Mid)', zone: 'major_east', lane: 3, road: 'Major Road Eastbound (Lane 3)', ruleInfo: 'Major Road Eastbound Lane 3 Intermediate.' },
+  ME_E_L4_MID: { id: 'ME_E_L4_MID', x: 1080, y: 430, label: 'Major East L4 (Mid)', zone: 'major_east', lane: 4, road: 'Major Road Eastbound (Lane 4)', ruleInfo: 'Major Road Eastbound Lane 4 Intermediate.' },
+
   ME_E_L1_END: {
     id: 'ME_E_L1_END', x: 1148, y: 358, label: 'Major East L1 (End)',
     zone: 'major_east', lane: 1, road: 'Major Road Eastbound (Lane 1)',
@@ -246,6 +287,11 @@ export const NODES = {
     ruleInfo: 'Major East Lane 1 (Outermost Left): 90° Left or 0° Straight via Roundabout Ring 1.'
   },
 
+  ME_W_L4_MID: { id: 'ME_W_L4_MID', x: 1070, y: 510, label: 'Major East L4 (Mid)', zone: 'major_east', lane: 4, road: 'Major Road East Approach (Lane 4)', ruleInfo: 'Major East Lane 4 Approach Mid.' },
+  ME_W_L3_MID: { id: 'ME_W_L3_MID', x: 1070, y: 534, label: 'Major East L3 (Mid)', zone: 'major_east', lane: 3, road: 'Major Road East Approach (Lane 3)', ruleInfo: 'Major East Lane 3 Approach Mid.' },
+  ME_W_L2_MID: { id: 'ME_W_L2_MID', x: 1070, y: 558, label: 'Major East L2 (Mid)', zone: 'major_east', lane: 2, road: 'Major Road East Approach (Lane 2)', ruleInfo: 'Major East Lane 2 Approach Mid.' },
+  ME_W_L1_MID: { id: 'ME_W_L1_MID', x: 1070, y: 582, label: 'Major East L1 (Mid)', zone: 'major_east', lane: 1, road: 'Major Road East Approach (Lane 1)', ruleInfo: 'Major East Lane 1 Approach Mid.' },
+
   ME_W_L4_ENTRY: {
     id: 'ME_W_L4_ENTRY', x: 1010, y: 510, label: 'Major East L4 Entry',
     zone: 'major_east_entry', approach: 'ME', lane: 4, road: 'Major East Entry L4',
@@ -289,6 +335,10 @@ export const NODES = {
     ruleInfo: 'Minor Road South Lane 3 (Innermost Right): CRITICAL NTSA RULE — Must skip Roundabout Ring 3 and enter innermost Ring 4! Allowed 90° Right (East), 180° U-Turn, or 270°.'
   },
 
+  MS_N_L1_MID: { id: 'MS_N_L1_MID', x: 743, y: 705, label: 'Minor South L1 (Mid)', zone: 'minor_south', lane: 1, road: 'Minor Road South (Lane 1)', ruleInfo: 'Minor Road South Lane 1 Intermediate.' },
+  MS_N_L2_MID: { id: 'MS_N_L2_MID', x: 767, y: 705, label: 'Minor South L2 (Mid)', zone: 'minor_south', lane: 2, road: 'Minor Road South (Lane 2)', ruleInfo: 'Minor Road South Lane 2 Intermediate.' },
+  MS_N_L3_MID: { id: 'MS_N_L3_MID', x: 791, y: 705, label: 'Minor South L3 (Mid)', zone: 'minor_south', lane: 3, road: 'Minor Road South (Lane 3)', ruleInfo: 'Minor Road South Lane 3 Intermediate.' },
+
   MS_N_L1_ENTRY: {
     id: 'MS_N_L1_ENTRY', x: 743, y: 658, label: 'Minor South L1 Entry',
     zone: 'minor_south_entry', approach: 'MS', lane: 1, road: 'Minor South Entry L1',
@@ -320,6 +370,10 @@ export const NODES = {
     zone: 'minor_south_exit', exitRoad: 'MS', lane: 1, road: 'Minor Road Southbound (Outer L1)',
     ruleInfo: 'Minor Road Southbound Outer Lane 1 Exit (Receives traffic from Roundabout Ring 1).'
   },
+
+  MS_S_L3_MID: { id: 'MS_S_L3_MID', x: 839, y: 710, label: 'Minor South Exit L3 (Mid)', zone: 'minor_south_exit', lane: 3, road: 'Minor Road Southbound (Lane 3)', ruleInfo: 'Minor Road Southbound Lane 3 Intermediate.' },
+  MS_S_L2_MID: { id: 'MS_S_L2_MID', x: 863, y: 710, label: 'Minor South Exit L2 (Mid)', zone: 'minor_south_exit', lane: 2, road: 'Minor Road Southbound (Lane 2)', ruleInfo: 'Minor Road Southbound Lane 2 Intermediate.' },
+  MS_S_L1_MID: { id: 'MS_S_L1_MID', x: 887, y: 710, label: 'Minor South Exit L1 (Mid)', zone: 'minor_south_exit', lane: 1, road: 'Minor Road Southbound (Lane 1)', ruleInfo: 'Minor Road Southbound Lane 1 Intermediate.' },
 
   MS_S_L3_END: {
     id: 'MS_S_L3_END', x: 839, y: 762, label: 'Minor Southbound L3 (End)',
@@ -354,6 +408,10 @@ export const NODES = {
     ruleInfo: 'Minor Road Northbound Inner Lane 3 Exit.'
   },
 
+  MN_N_L1_MID: { id: 'MN_N_L1_MID', x: 743, y: 218, label: 'Minor North Exit L1 (Mid)', zone: 'minor_north_exit', lane: 1, road: 'Minor Road Northbound (Lane 1)', ruleInfo: 'Minor Road Northbound Lane 1 Intermediate.' },
+  MN_N_L2_MID: { id: 'MN_N_L2_MID', x: 767, y: 218, label: 'Minor North Exit L2 (Mid)', zone: 'minor_north_exit', lane: 2, road: 'Minor Road Northbound (Lane 2)', ruleInfo: 'Minor Road Northbound Lane 2 Intermediate.' },
+  MN_N_L3_MID: { id: 'MN_N_L3_MID', x: 791, y: 218, label: 'Minor North Exit L3 (Mid)', zone: 'minor_north_exit', lane: 3, road: 'Minor Road Northbound (Lane 3)', ruleInfo: 'Minor Road Northbound Lane 3 Intermediate.' },
+
   MN_N_L1_TOP: {
     id: 'MN_N_L1_TOP', x: 743, y: 155, label: 'Minor North L1 (Top Jct)',
     zone: 'minor_north', lane: 1, road: 'Minor Road Northbound (Lane 1)',
@@ -385,6 +443,10 @@ export const NODES = {
     zone: 'minor_north', lane: 1, road: 'Minor Road North Approach (Lane 1)',
     ruleInfo: 'Minor North Southbound Lane 1 (Outermost Left): 90° Left (East) or 0° Straight (South) via Roundabout Ring 1.'
   },
+
+  MN_S_L3_MID: { id: 'MN_S_L3_MID', x: 839, y: 218, label: 'Minor North L3 (Mid)', zone: 'minor_north', lane: 3, road: 'Minor Road North Approach (Lane 3)', ruleInfo: 'Minor Road North Southbound Lane 3 Intermediate.' },
+  MN_S_L2_MID: { id: 'MN_S_L2_MID', x: 863, y: 218, label: 'Minor North L2 (Mid)', zone: 'minor_north', lane: 2, road: 'Minor Road North Approach (Lane 2)', ruleInfo: 'Minor Road North Southbound Lane 2 Intermediate.' },
+  MN_S_L1_MID: { id: 'MN_S_L1_MID', x: 887, y: 218, label: 'Minor North L1 (Mid)', zone: 'minor_north', lane: 1, road: 'Minor Road North Approach (Lane 1)', ruleInfo: 'Minor Road North Southbound Lane 1 Intermediate.' },
 
   MN_S_L3_ENTRY: {
     id: 'MN_S_L3_ENTRY', x: 839, y: 282, label: 'Minor North L3 Entry',
@@ -443,10 +505,20 @@ export const NODES = {
     zone: 'side_road', road: 'Side Access Road (Northbound)',
     ruleInfo: 'Two-Way Side Access Road (Northbound Left Lane). Strict NTSA Keep Left discipline.'
   },
+  SIDE_N_LOWER: {
+    id: 'SIDE_N_LOWER', x: 350, y: 270, label: 'Side Road North (Lower)',
+    zone: 'side_road', road: 'Side Access Road (Northbound Lower)',
+    ruleInfo: 'Side Access Road Northbound lower approach.'
+  },
   SIDE_N_MID: {
     id: 'SIDE_N_MID', x: 350, y: 228, label: 'Side Road (Angle Parking Jct)',
     zone: 'side_road', road: 'Side Access Road (Angle Parking Entry)',
     ruleInfo: 'Side Access Road Junction: Turn right into Controlled Angle Parking entrance or continue North to Top Perimeter Road.'
+  },
+  SIDE_N_UPPER: {
+    id: 'SIDE_N_UPPER', x: 350, y: 186, label: 'Side Road North (Upper)',
+    zone: 'side_road', road: 'Side Access Road (Northbound Upper)',
+    ruleInfo: 'Side Access Road Northbound upper approach.'
   },
   SIDE_N_TOP: {
     id: 'SIDE_N_TOP', x: 350, y: 145, label: 'Side Road Northbound (Top)',
@@ -458,53 +530,143 @@ export const NODES = {
     zone: 'side_road', road: 'Side Access Road (Southbound Top)',
     ruleInfo: 'Entering Side Access Road Southbound from Top Perimeter Road (East lane).'
   },
+  SIDE_S_UPPER: {
+    id: 'SIDE_S_UPPER', x: 376, y: 195, label: 'Side Road South (Upper)',
+    zone: 'side_road', road: 'Side Access Road (Southbound Upper)',
+    ruleInfo: 'Side Access Road Southbound upper approach.'
+  },
   SIDE_S_MID: {
     id: 'SIDE_S_MID', x: 376, y: 245, label: 'Side Road Southbound (Mid)',
     zone: 'side_road', road: 'Side Access Road (Southbound Mid)',
     ruleInfo: 'Side Access Road Southbound (East lane, keeping left as you drive South).'
   },
+  SIDE_S_LOWER: {
+    id: 'SIDE_S_LOWER', x: 376, y: 280, label: 'Side Road South (Lower)',
+    zone: 'side_road', road: 'Side Access Road (Southbound Lower)',
+    ruleInfo: 'Side Access Road Southbound lower approach before Major West junction.'
+  },
   SIDE_S_BOT: {
     id: 'SIDE_S_BOT', x: 376, y: 312, label: 'Side Road Southbound (Bot)',
     zone: 'side_road', road: 'Side Access Road (Southbound Exit)',
-    ruleInfo: 'Yield before turning 90° Left onto Major Road West (Lane 1).'
+    ruleInfo: 'Yield before turning 90° Left onto Major Road West.'
   },
 
-  // --- CONTROLLED ANGLE PARKING ZONE (Upper Center Sector) ---
+  // --- CONTROLLED ANGLE PARKING ZONE (All 14 Bays & Complete Central Aisle) ---
   AP_ENTRY: {
     id: 'AP_ENTRY', x: 425, y: 222, label: 'Angle Parking Entrance',
     zone: 'angle_parking', road: 'Controlled (Angle) Parking Entry',
     ruleInfo: 'Controlled (Angle) Parking Entrance: Strictly for Saloon/Small vehicles. Enter forward, park in the farthest empty bay, and NEVER drive straight through as a shortcut!'
+  },
+  AP_AISLE_1: {
+    id: 'AP_AISLE_1', x: 472, y: 232, label: 'Angle Parking Aisle (Bay #1)',
+    zone: 'angle_parking', road: 'Controlled Parking Central Aisle',
+    ruleInfo: 'Controlled Parking Aisle opposite Bay #1.'
   },
   AP_AISLE_W: {
     id: 'AP_AISLE_W', x: 505, y: 232, label: 'Angle Parking Aisle (West)',
     zone: 'angle_parking', road: 'Controlled Parking Central Aisle',
     ruleInfo: 'Controlled Parking Aisle: Proceed forward to the farthest available diagonal parking bay.'
   },
+  AP_AISLE_3: {
+    id: 'AP_AISLE_3', x: 540, y: 232, label: 'Angle Parking Aisle (Bay #3)',
+    zone: 'angle_parking', road: 'Controlled Parking Central Aisle',
+    ruleInfo: 'Controlled Parking Aisle opposite Bay #3.'
+  },
+  AP_AISLE_4: {
+    id: 'AP_AISLE_4', x: 574, y: 232, label: 'Angle Parking Aisle (Bay #4)',
+    zone: 'angle_parking', road: 'Controlled Parking Central Aisle',
+    ruleInfo: 'Controlled Parking Aisle opposite Bay #4.'
+  },
   AP_AISLE_E: {
     id: 'AP_AISLE_E', x: 615, y: 232, label: 'Angle Parking Aisle (East)',
     zone: 'angle_parking', road: 'Controlled Parking Central Aisle',
     ruleInfo: 'Controlled Parking Aisle (East): Enter a diagonal bay forward, then reverse back into the aisle to exit.'
   },
+  AP_AISLE_6: {
+    id: 'AP_AISLE_6', x: 642, y: 232, label: 'Angle Parking Aisle (Bay #6)',
+    zone: 'angle_parking', road: 'Controlled Parking Central Aisle',
+    ruleInfo: 'Controlled Parking Aisle opposite Bay #6.'
+  },
+  AP_AISLE_7: {
+    id: 'AP_AISLE_7', x: 676, y: 232, label: 'Angle Parking Aisle (Bay #7)',
+    zone: 'angle_parking', road: 'Controlled Parking Central Aisle',
+    ruleInfo: 'Controlled Parking Aisle opposite Bay #7.'
+  },
+
+  // 7 Top Row Angle Bays (1..7, Park Forward In, Reverse Out)
+  AP_BAY_TOP_BAY1: {
+    id: 'AP_BAY_TOP_BAY1', x: 472, y: 186, label: 'Angle Bay Top #1',
+    zone: 'angle_parking_bay', road: 'Controlled Angle Parking Bay (Top #1)',
+    ruleInfo: 'Controlled Angle Parking Bay #1: Enter forward, exit in reverse.'
+  },
+  AP_BAY_TOP_BAY2: {
+    id: 'AP_BAY_TOP_BAY2', x: 506, y: 186, label: 'Angle Bay Top #2',
+    zone: 'angle_parking_bay', road: 'Controlled Angle Parking Bay (Top #2)',
+    ruleInfo: 'Controlled Angle Parking Bay #2: Enter forward, exit in reverse.'
+  },
   AP_BAY_TOP_1: {
-    id: 'AP_BAY_TOP_1', x: 540, y: 186, label: 'Angle Bay Top #1',
-    zone: 'angle_parking_bay', road: 'Controlled Angle Parking Bay (Top Mid)',
+    id: 'AP_BAY_TOP_1', x: 540, y: 186, label: 'Angle Bay Top #3',
+    zone: 'angle_parking_bay', road: 'Controlled Angle Parking Bay (Top #3)',
     ruleInfo: 'Controlled Angle Parking Bay: Enter forward, exit in reverse.'
   },
+  AP_BAY_TOP_BAY4: {
+    id: 'AP_BAY_TOP_BAY4', x: 574, y: 186, label: 'Angle Bay Top #4',
+    zone: 'angle_parking_bay', road: 'Controlled Angle Parking Bay (Top #4)',
+    ruleInfo: 'Controlled Angle Parking Bay #4: Enter forward, exit in reverse.'
+  },
+  AP_BAY_TOP_BAY5: {
+    id: 'AP_BAY_TOP_BAY5', x: 608, y: 186, label: 'Angle Bay Top #5',
+    zone: 'angle_parking_bay', road: 'Controlled Angle Parking Bay (Top #5)',
+    ruleInfo: 'Controlled Angle Parking Bay #5: Enter forward, exit in reverse.'
+  },
   AP_BAY_TOP_2: {
-    id: 'AP_BAY_TOP_2', x: 642, y: 186, label: 'Angle Bay Top #2 (Farthest)',
-    zone: 'angle_parking_bay', road: 'Controlled Angle Parking Bay (Top Farthest)',
-    ruleInfo: 'Farthest Controlled Angle Parking Bay (Top Row): Correct NTSA target bay when all bays are empty! Enter forward, exit in reverse.'
+    id: 'AP_BAY_TOP_2', x: 642, y: 186, label: 'Angle Bay Top #6',
+    zone: 'angle_parking_bay', road: 'Controlled Angle Parking Bay (Top #6)',
+    ruleInfo: 'Controlled Angle Parking Bay: Enter forward, exit in reverse.'
+  },
+  AP_BAY_TOP_BAY7: {
+    id: 'AP_BAY_TOP_BAY7', x: 676, y: 186, label: 'Angle Bay Top #7 (Farthest)',
+    zone: 'angle_parking_bay', road: 'Controlled Angle Parking Bay (Top #7 Farthest)',
+    ruleInfo: 'Farthest Controlled Angle Parking Bay (Top Row): Enter forward, exit in reverse.'
+  },
+
+  // 7 Bottom Row Angle Bays (1..7, Park Forward In, Reverse Out)
+  AP_BAY_BOT_BAY1: {
+    id: 'AP_BAY_BOT_BAY1', x: 472, y: 278, label: 'Angle Bay Bottom #1',
+    zone: 'angle_parking_bay', road: 'Controlled Angle Parking Bay (Bottom #1)',
+    ruleInfo: 'Controlled Angle Parking Bay: Enter forward, exit in reverse.'
+  },
+  AP_BAY_BOT_BAY2: {
+    id: 'AP_BAY_BOT_BAY2', x: 506, y: 278, label: 'Angle Bay Bottom #2',
+    zone: 'angle_parking_bay', road: 'Controlled Angle Parking Bay (Bottom #2)',
+    ruleInfo: 'Controlled Angle Parking Bay: Enter forward, exit in reverse.'
   },
   AP_BAY_BOT_1: {
-    id: 'AP_BAY_BOT_1', x: 540, y: 278, label: 'Angle Bay Bottom #1',
-    zone: 'angle_parking_bay', road: 'Controlled Angle Parking Bay (Bottom Mid)',
-    ruleInfo: 'Controlled Angle Parking Bay (Bottom Row): Enter forward, exit in reverse.'
+    id: 'AP_BAY_BOT_1', x: 540, y: 278, label: 'Angle Bay Bottom #3',
+    zone: 'angle_parking_bay', road: 'Controlled Angle Parking Bay (Bottom #3)',
+    ruleInfo: 'Controlled Angle Parking Bay: Enter forward, exit in reverse.'
+  },
+  AP_BAY_BOT_BAY4: {
+    id: 'AP_BAY_BOT_BAY4', x: 574, y: 278, label: 'Angle Bay Bottom #4',
+    zone: 'angle_parking_bay', road: 'Controlled Angle Parking Bay (Bottom #4)',
+    ruleInfo: 'Controlled Angle Parking Bay: Enter forward, exit in reverse.'
+  },
+  AP_BAY_BOT_BAY5: {
+    id: 'AP_BAY_BOT_BAY5', x: 608, y: 278, label: 'Angle Bay Bottom #5',
+    zone: 'angle_parking_bay', road: 'Controlled Angle Parking Bay (Bottom #5)',
+    ruleInfo: 'Controlled Angle Parking Bay: Enter forward, exit in reverse.'
   },
   AP_BAY_BOT_2: {
-    id: 'AP_BAY_BOT_2', x: 642, y: 278, label: 'Angle Bay Bottom #2 (Farthest)',
-    zone: 'angle_parking_bay', road: 'Controlled Angle Parking Bay (Bottom Farthest)',
+    id: 'AP_BAY_BOT_2', x: 642, y: 278, label: 'Angle Bay Bottom #6',
+    zone: 'angle_parking_bay', road: 'Controlled Angle Parking Bay (Bottom #6)',
+    ruleInfo: 'Controlled Angle Parking Bay: Enter forward, exit in reverse.'
+  },
+  AP_BAY_BOT_BAY7: {
+    id: 'AP_BAY_BOT_BAY7', x: 676, y: 278, label: 'Angle Bay Bottom #7 (Farthest)',
+    zone: 'angle_parking_bay', road: 'Controlled Angle Parking Bay (Bottom #7 Farthest)',
     ruleInfo: 'Farthest Controlled Angle Parking Bay (Bottom Row): Enter forward, exit in reverse.'
   },
+
   AP_EXIT_E: {
     id: 'AP_EXIT_E', x: 705, y: 222, label: 'Angle Parking East Exit',
     zone: 'angle_parking', road: 'Controlled Parking Exit',
@@ -517,6 +679,11 @@ export const NODES = {
     zone: 'top_road', road: 'Top Perimeter Road (Eastbound)',
     ruleInfo: 'Top Two-Way Perimeter Road (Eastbound Left Lane).'
   },
+  TOP_E_PRE: {
+    id: 'TOP_E_PRE', x: 248, y: 76, label: 'Top Road Eastbound (West Approach)',
+    zone: 'top_road', road: 'Top Perimeter Road (Eastbound Approach)',
+    ruleInfo: 'Top Perimeter Road Eastbound approach to Side Road junction.'
+  },
   TOP_E_JCT_W: {
     id: 'TOP_E_JCT_W', x: 350, y: 76, label: 'Top Road Eastbound (Side Jct)',
     zone: 'top_road', road: 'Top Perimeter Road (Side Jct)',
@@ -527,15 +694,30 @@ export const NODES = {
     zone: 'zebra', road: 'Pedestrian Zebra Crossing #1',
     ruleInfo: 'White Pedestrian Zebra Crossing: Drivers must yield to pedestrians and NEVER park or stop on a zebra crossing.'
   },
+  TOP_E_FLUSH_W: {
+    id: 'TOP_E_FLUSH_W', x: 510, y: 76, label: 'Top Road Eastbound (Flush West)',
+    zone: 'top_road', road: 'Top Perimeter Road (Eastbound Flush West)',
+    ruleInfo: 'Top Perimeter Road Eastbound opposite Flush Parking West.'
+  },
   TOP_E_MID: {
     id: 'TOP_E_MID', x: 585, y: 76, label: 'Top Road Eastbound (Mid)',
     zone: 'top_road', road: 'Top Perimeter Road (Eastbound Mid)',
     ruleInfo: 'Top Perimeter Road Eastbound passing Flush Parking zone.'
   },
+  TOP_E_FLUSH_E: {
+    id: 'TOP_E_FLUSH_E', x: 665, y: 76, label: 'Top Road Eastbound (Flush East)',
+    zone: 'top_road', road: 'Top Perimeter Road (Eastbound Flush East)',
+    ruleInfo: 'Top Perimeter Road Eastbound opposite Flush Parking East.'
+  },
   TOP_E_JCT_N: {
     id: 'TOP_E_JCT_N', x: 767, y: 76, label: 'Top Road (Minor North Jct)',
     zone: 'top_road', road: 'Top Road / Minor North Junction',
     ruleInfo: 'Junction between Minor Road North and Top Two-Way Perimeter Road.'
+  },
+  TOP_E_APPROACH_E: {
+    id: 'TOP_E_APPROACH_E', x: 900, y: 76, label: 'Top Road Eastbound (Far East Mid)',
+    zone: 'top_road', road: 'Top Perimeter Road (Eastbound Far East Mid)',
+    ruleInfo: 'Top Perimeter Road Eastbound approach to Zebra Crossing #2.'
   },
   TOP_E_ZEBRA2: {
     id: 'TOP_E_ZEBRA2', x: 1030, y: 76, label: 'Zebra Crossing #2 (Eastbound)',
@@ -558,25 +740,30 @@ export const NODES = {
     zone: 'zebra', road: 'Pedestrian Zebra Crossing #2',
     ruleInfo: 'Yield to pedestrians at Zebra Crossing #2.'
   },
+  TOP_W_APPROACH_E: {
+    id: 'TOP_W_APPROACH_E', x: 930, y: 100, label: 'Top Road Westbound (Far East Approach)',
+    zone: 'top_road', road: 'Top Perimeter Road (Westbound Far East Approach)',
+    ruleInfo: 'Top Perimeter Road Westbound approach to Minor North junction.'
+  },
   TOP_W_JCT_N: {
     id: 'TOP_W_JCT_N', x: 839, y: 100, label: 'Top Road Westbound (Minor Jct)',
     zone: 'top_road', road: 'Top Road / Minor North Junction',
     ruleInfo: 'Turn left into Minor Road North (Southbound Lanes 1-3) or continue West towards Flush Parking.'
+  },
+  TOP_W_FLUSH_E: {
+    id: 'TOP_W_FLUSH_E', x: 740, y: 100, label: 'Top Road Westbound (Flush East)',
+    zone: 'top_road', road: 'Top Perimeter Road (Westbound Flush East)',
+    ruleInfo: 'Top Perimeter Road Westbound approach to Flush Parking.'
   },
   TOP_W_FLUSH_APPROACH: {
     id: 'TOP_W_FLUSH_APPROACH', x: 648, y: 100, label: 'Flush Parking Approach',
     zone: 'top_road', road: 'Flush Parking Approach',
     ruleInfo: 'Flush (Uncontrolled) Parking Approach: Stop ahead of the bay, reverse into the Flush Parking bay, and drive forward when exiting!'
   },
-  FLUSH_BAY_1: {
-    id: 'FLUSH_BAY_1', x: 585, y: 120, label: 'Flush Parking Bay #1',
-    zone: 'flush_parking_bay', road: 'Flush (Uncontrolled) Parking Bay #1',
-    ruleInfo: 'Flush (Parallel/Uncontrolled) Parking Bay: NTSA Rule — Must enter by REVERSING and exit by driving FORWARD.'
-  },
-  FLUSH_BAY_2: {
-    id: 'FLUSH_BAY_2', x: 505, y: 120, label: 'Flush Parking Bay #2',
-    zone: 'flush_parking_bay', road: 'Flush (Uncontrolled) Parking Bay #2',
-    ruleInfo: 'Flush (Parallel/Uncontrolled) Parking Bay #2: Enter in reverse, exit forward.'
+  TOP_W_FLUSH_W: {
+    id: 'TOP_W_FLUSH_W', x: 525, y: 100, label: 'Top Road Westbound (Flush West)',
+    zone: 'top_road', road: 'Top Perimeter Road (Westbound Flush West)',
+    ruleInfo: 'Top Perimeter Road Westbound past Flush Parking.'
   },
   TOP_W_ZEBRA1: {
     id: 'TOP_W_ZEBRA1', x: 432, y: 100, label: 'Zebra Crossing #1 (Westbound)',
@@ -588,18 +775,43 @@ export const NODES = {
     zone: 'top_road', road: 'Top Perimeter Road (Side Jct)',
     ruleInfo: 'Turn 90° Left into Side Access Road Southbound or continue West.'
   },
+  TOP_W_POST: {
+    id: 'TOP_W_POST', x: 248, y: 100, label: 'Top Road Westbound (Far West)',
+    zone: 'top_road', road: 'Top Perimeter Road (Westbound Far West)',
+    ruleInfo: 'Top Perimeter Road Westbound heading to far west end.'
+  },
   TOP_W_WEST: {
     id: 'TOP_W_WEST', x: 145, y: 100, label: 'Top Road Westbound (End)',
     zone: 'top_road', road: 'Top Perimeter Road (Far West)',
     ruleInfo: 'Far West end of Top Perimeter Road.'
+  },
+
+  // 4 Flush Parking Bays (Reverse In, Forward Out)
+  FLUSH_BAY_2: {
+    id: 'FLUSH_BAY_2', x: 505, y: 120, label: 'Flush Parking Bay #1',
+    zone: 'flush_parking_bay', road: 'Flush (Uncontrolled) Parking Bay #1',
+    ruleInfo: 'Flush (Parallel/Uncontrolled) Parking Bay #1: Enter in reverse, exit forward.'
+  },
+  FLUSH_BAY_3: {
+    id: 'FLUSH_BAY_3', x: 550, y: 120, label: 'Flush Parking Bay #2',
+    zone: 'flush_parking_bay', road: 'Flush (Uncontrolled) Parking Bay #2',
+    ruleInfo: 'Flush (Parallel/Uncontrolled) Parking Bay #2: Enter in reverse, exit forward.'
+  },
+  FLUSH_BAY_1: {
+    id: 'FLUSH_BAY_1', x: 585, y: 120, label: 'Flush Parking Bay #3',
+    zone: 'flush_parking_bay', road: 'Flush (Uncontrolled) Parking Bay #3',
+    ruleInfo: 'Flush (Parallel/Uncontrolled) Parking Bay #3: NTSA Rule — Must enter by REVERSING and exit by driving FORWARD.'
+  },
+  FLUSH_BAY_4: {
+    id: 'FLUSH_BAY_4', x: 650, y: 120, label: 'Flush Parking Bay #4',
+    zone: 'flush_parking_bay', road: 'Flush (Uncontrolled) Parking Bay #4',
+    ruleInfo: 'Flush (Parallel/Uncontrolled) Parking Bay #4: Enter in reverse, exit forward.'
   }
 };
 
 /**
  * Directed Edges connecting BOARD_NODES.
  * Includes both legal edges (`isLegal: true`) and common student mistake edges (`isLegal: false`)
- * so learners can make real mistakes and receive detailed NTSA Examiner feedback, while the
- * BFS Auto-Solver strictly uses `isLegal: true` edges.
  */
 export const buildBoardEdges = () => {
   const edges = [];
@@ -609,32 +821,52 @@ export const buildBoardEdges = () => {
       to,
       isLegal: opts.isLegal !== undefined ? opts.isLegal : true,
       violationReason: opts.violationReason || null,
-      turn: opts.turn || 'none', // 'left' | 'right' | 'none'
+      turn: opts.turn || 'none',
       isReverse: Boolean(opts.isReverse)
     });
   };
 
-  // 1. Spawns to Lane Starts
-  addEdge('MW_SPAWN', 'MW_E_L1_START', { turn: 'left' });
-  addEdge('MW_SPAWN', 'MW_E_L2_START');
-  addEdge('MW_SPAWN', 'MW_E_L3_START');
-  addEdge('MW_SPAWN', 'MW_E_L4_START', { turn: 'right' });
-
-  addEdge('ME_SPAWN', 'ME_W_L1_START', { turn: 'left' });
-  addEdge('ME_SPAWN', 'ME_W_L2_START');
-  addEdge('ME_SPAWN', 'ME_W_L3_START');
-  addEdge('ME_SPAWN', 'ME_W_L4_START', { turn: 'right' });
-
-  addEdge('MS_SPAWN', 'MS_N_L1_START', { turn: 'left' });
-  addEdge('MS_SPAWN', 'MS_N_L2_START');
+  // 1. Spawns onto Approaches
+  [1, 2, 3, 4].forEach((l) => {
+    addEdge('MW_SPAWN', `MW_E_L${l}_START`, { turn: l === 1 ? 'none' : 'right' });
+    addEdge('MW_SPAWN', `MW_E_L${l}_PRE`, { turn: l === 1 ? 'none' : 'right' });
+    addEdge('ME_SPAWN', `ME_W_L${l}_START`, { turn: l === 1 ? 'none' : 'right' });
+  });
+  addEdge('MS_SPAWN', 'MS_N_L1_START');
+  addEdge('MS_SPAWN', 'MS_N_L2_START', { turn: 'right' });
   addEdge('MS_SPAWN', 'MS_N_L3_START', { turn: 'right' });
 
   // 2. Major Road West Eastbound progressions + Broken-Line Lane Changes
   [1, 2, 3, 4].forEach((l) => {
+    // Legacy direct connections preserved
     addEdge(`MW_E_L${l}_START`, `MW_E_L${l}_MID`);
     addEdge(`MW_E_L${l}_MID`, `MW_E_L${l}_ENTRY`);
+
+    // Progressive node sequence: START -> PRE -> MID -> SHIFT -> APP -> ENTRY
+    addEdge(`MW_E_L${l}_START`, `MW_E_L${l}_PRE`);
+    addEdge(`MW_E_L${l}_PRE`, `MW_E_L${l}_MID`);
+    addEdge(`MW_E_L${l}_MID`, `MW_E_L${l}_SHIFT`);
+    addEdge(`MW_E_L${l}_SHIFT`, `MW_E_L${l}_APP`);
+    addEdge(`MW_E_L${l}_APP`, `MW_E_L${l}_ENTRY`);
   });
-  // Legal Broken-Line Lane Shifts on Major West Eastbound (before solid approach lines)
+
+  // Broken-Line Lane Shifts: START <-> PRE
+  addEdge('MW_E_L1_START', 'MW_E_L2_PRE', { turn: 'right' });
+  addEdge('MW_E_L2_START', 'MW_E_L1_PRE', { turn: 'left' });
+  addEdge('MW_E_L2_START', 'MW_E_L3_PRE', { turn: 'right' });
+  addEdge('MW_E_L3_START', 'MW_E_L2_PRE', { turn: 'left' });
+  addEdge('MW_E_L3_START', 'MW_E_L4_PRE', { turn: 'right' });
+  addEdge('MW_E_L4_START', 'MW_E_L3_PRE', { turn: 'left' });
+
+  // Broken-Line Lane Shifts: PRE <-> MID
+  addEdge('MW_E_L1_PRE', 'MW_E_L2_MID', { turn: 'right' });
+  addEdge('MW_E_L2_PRE', 'MW_E_L1_MID', { turn: 'left' });
+  addEdge('MW_E_L2_PRE', 'MW_E_L3_MID', { turn: 'right' });
+  addEdge('MW_E_L3_PRE', 'MW_E_L2_MID', { turn: 'left' });
+  addEdge('MW_E_L3_PRE', 'MW_E_L4_MID', { turn: 'right' });
+  addEdge('MW_E_L4_PRE', 'MW_E_L3_MID', { turn: 'left' });
+
+  // Legacy shifts START <-> MID
   addEdge('MW_E_L1_START', 'MW_E_L2_MID', { turn: 'right' });
   addEdge('MW_E_L2_START', 'MW_E_L1_MID', { turn: 'left' });
   addEdge('MW_E_L2_START', 'MW_E_L3_MID', { turn: 'right' });
@@ -642,18 +874,80 @@ export const buildBoardEdges = () => {
   addEdge('MW_E_L3_START', 'MW_E_L4_MID', { turn: 'right' });
   addEdge('MW_E_L4_START', 'MW_E_L3_MID', { turn: 'left' });
 
+  // Broken-Line Lane Shifts: MID <-> SHIFT
+  addEdge('MW_E_L1_MID', 'MW_E_L2_SHIFT', { turn: 'right' });
+  addEdge('MW_E_L2_MID', 'MW_E_L1_SHIFT', { turn: 'left' });
+  addEdge('MW_E_L2_MID', 'MW_E_L3_SHIFT', { turn: 'right' });
+  addEdge('MW_E_L3_MID', 'MW_E_L2_SHIFT', { turn: 'left' });
+  addEdge('MW_E_L3_MID', 'MW_E_L4_SHIFT', { turn: 'right' });
+  addEdge('MW_E_L4_MID', 'MW_E_L3_SHIFT', { turn: 'left' });
+
+  // Broken-Line Lane Shifts: SHIFT <-> APP
+  addEdge('MW_E_L1_SHIFT', 'MW_E_L2_APP', { turn: 'right' });
+  addEdge('MW_E_L2_SHIFT', 'MW_E_L1_APP', { turn: 'left' });
+  addEdge('MW_E_L2_SHIFT', 'MW_E_L3_APP', { turn: 'right' });
+  addEdge('MW_E_L3_SHIFT', 'MW_E_L2_APP', { turn: 'left' });
+  addEdge('MW_E_L3_SHIFT', 'MW_E_L4_APP', { turn: 'right' });
+  addEdge('MW_E_L4_SHIFT', 'MW_E_L3_APP', { turn: 'left' });
+
+  // Broken-Line Lane Shifts: APP <-> ENTRY
+  addEdge('MW_E_L1_APP', 'MW_E_L2_ENTRY', { turn: 'right' });
+  addEdge('MW_E_L2_APP', 'MW_E_L1_ENTRY', { turn: 'left' });
+  addEdge('MW_E_L2_APP', 'MW_E_L3_ENTRY', { turn: 'right' });
+  addEdge('MW_E_L3_APP', 'MW_E_L2_ENTRY', { turn: 'left' });
+  addEdge('MW_E_L3_APP', 'MW_E_L4_ENTRY', { turn: 'right' });
+  addEdge('MW_E_L4_APP', 'MW_E_L3_ENTRY', { turn: 'left' });
+
+  // Direct diagonal shifts across broken lines for smooth driving
   addEdge('MW_E_L1_MID', 'MW_E_L2_ENTRY', { turn: 'right' });
   addEdge('MW_E_L2_MID', 'MW_E_L1_ENTRY', { turn: 'left' });
   addEdge('MW_E_L2_MID', 'MW_E_L3_ENTRY', { turn: 'right' });
   addEdge('MW_E_L3_MID', 'MW_E_L2_ENTRY', { turn: 'left' });
   addEdge('MW_E_L3_MID', 'MW_E_L4_ENTRY', { turn: 'right' });
   addEdge('MW_E_L4_MID', 'MW_E_L3_ENTRY', { turn: 'left' });
+  addEdge('MW_E_L2_SHIFT', 'MW_E_L3_ENTRY', { turn: 'right' });
+  addEdge('MW_E_L2_SHIFT', 'MW_E_L4_ENTRY', { turn: 'right' });
+  addEdge('MW_E_L3_SHIFT', 'MW_E_L4_ENTRY', { turn: 'right' });
 
   // 3. Major Road West Westbound progressions + Broken-Line Lane Changes
   [1, 2, 3, 4].forEach((l) => {
+    // Legacy direct connections preserved
     addEdge(`MW_W_L${l}_EXIT`, `MW_W_L${l}_MID`);
     addEdge(`MW_W_L${l}_MID`, `MW_W_L${l}_END`);
+
+    // Progressive node sequence: EXIT -> APP -> SHIFT -> MID -> PRE -> END
+    addEdge(`MW_W_L${l}_EXIT`, `MW_W_L${l}_APP`);
+    addEdge(`MW_W_L${l}_APP`, `MW_W_L${l}_SHIFT`);
+    addEdge(`MW_W_L${l}_SHIFT`, `MW_W_L${l}_MID`);
+    addEdge(`MW_W_L${l}_MID`, `MW_W_L${l}_PRE`);
+    addEdge(`MW_W_L${l}_PRE`, `MW_W_L${l}_END`);
   });
+
+  // Westbound shifts: EXIT <-> APP
+  addEdge('MW_W_L4_EXIT', 'MW_W_L3_APP', { turn: 'left' });
+  addEdge('MW_W_L3_EXIT', 'MW_W_L4_APP', { turn: 'right' });
+  addEdge('MW_W_L3_EXIT', 'MW_W_L2_APP', { turn: 'left' });
+  addEdge('MW_W_L2_EXIT', 'MW_W_L3_APP', { turn: 'right' });
+  addEdge('MW_W_L2_EXIT', 'MW_W_L1_APP', { turn: 'left' });
+  addEdge('MW_W_L1_EXIT', 'MW_W_L2_APP', { turn: 'right' });
+
+  // Westbound shifts: APP <-> SHIFT
+  addEdge('MW_W_L4_APP', 'MW_W_L3_SHIFT', { turn: 'left' });
+  addEdge('MW_W_L3_APP', 'MW_W_L4_SHIFT', { turn: 'right' });
+  addEdge('MW_W_L3_APP', 'MW_W_L2_SHIFT', { turn: 'left' });
+  addEdge('MW_W_L2_APP', 'MW_W_L3_SHIFT', { turn: 'right' });
+  addEdge('MW_W_L2_APP', 'MW_W_L1_SHIFT', { turn: 'left' });
+  addEdge('MW_W_L1_APP', 'MW_W_L2_SHIFT', { turn: 'right' });
+
+  // Westbound shifts: SHIFT <-> MID
+  addEdge('MW_W_L4_SHIFT', 'MW_W_L3_MID', { turn: 'left' });
+  addEdge('MW_W_L3_SHIFT', 'MW_W_L4_MID', { turn: 'right' });
+  addEdge('MW_W_L3_SHIFT', 'MW_W_L2_MID', { turn: 'left' });
+  addEdge('MW_W_L2_SHIFT', 'MW_W_L3_MID', { turn: 'right' });
+  addEdge('MW_W_L2_SHIFT', 'MW_W_L1_MID', { turn: 'left' });
+  addEdge('MW_W_L1_SHIFT', 'MW_W_L2_MID', { turn: 'right' });
+
+  // Legacy shifts EXIT <-> MID
   addEdge('MW_W_L4_EXIT', 'MW_W_L3_MID', { turn: 'left' });
   addEdge('MW_W_L3_EXIT', 'MW_W_L4_MID', { turn: 'right' });
   addEdge('MW_W_L3_EXIT', 'MW_W_L2_MID', { turn: 'left' });
@@ -661,6 +955,18 @@ export const buildBoardEdges = () => {
   addEdge('MW_W_L2_EXIT', 'MW_W_L1_MID', { turn: 'left' });
   addEdge('MW_W_L1_EXIT', 'MW_W_L2_MID', { turn: 'right' });
 
+  // Westbound shifts: MID <-> PRE
+  addEdge('MW_W_L4_MID', 'MW_W_L3_PRE', { turn: 'left' });
+  addEdge('MW_W_L3_MID', 'MW_W_L4_PRE', { turn: 'right' });
+  addEdge('MW_W_L3_MID', 'MW_W_L2_PRE', { turn: 'left' });
+  addEdge('MW_W_L2_MID', 'MW_W_L1_PRE', { turn: 'left' });
+
+  // Westbound shifts: PRE <-> END
+  addEdge('MW_W_L4_PRE', 'MW_W_L3_END', { turn: 'left' });
+  addEdge('MW_W_L3_PRE', 'MW_W_L2_END', { turn: 'left' });
+  addEdge('MW_W_L2_PRE', 'MW_W_L1_END', { turn: 'left' });
+
+  // Legacy shifts MID <-> END
   addEdge('MW_W_L4_MID', 'MW_W_L3_END', { turn: 'left' });
   addEdge('MW_W_L3_MID', 'MW_W_L4_END', { turn: 'right' });
   addEdge('MW_W_L3_MID', 'MW_W_L2_END', { turn: 'left' });
@@ -668,7 +974,11 @@ export const buildBoardEdges = () => {
 
   // 4. Median Gaps (Legal U-Turns from Innermost Lanes)
   addEdge('MW_E_L4_MID', 'GAP_W1', { turn: 'right' });
+  addEdge('MW_E_L4_SHIFT', 'GAP_W1', { turn: 'right' });
+  addEdge('MW_E_L4_APP', 'GAP_W1', { turn: 'right' });
   addEdge('GAP_W1', 'MW_W_L4_MID', { turn: 'right' });
+  addEdge('GAP_W1', 'MW_W_L4_SHIFT', { turn: 'right' });
+  addEdge('GAP_W1', 'MW_W_L4_APP', { turn: 'right' });
   addEdge('MW_W_L4_EXIT', 'GAP_W1', { turn: 'right' });
   addEdge('GAP_W1', 'MW_E_L4_ENTRY', { turn: 'right' });
 
@@ -680,12 +990,14 @@ export const buildBoardEdges = () => {
   addEdge('GAP_W2', 'MW_E_L1_START', { turn: 'right' });
 
   addEdge('ME_E_L4_EXIT', 'GAP_E1', { turn: 'right' });
+  addEdge('ME_E_L4_MID', 'GAP_E1', { turn: 'right' });
   addEdge('ME_E_L4_END', 'GAP_E1', { turn: 'right' });
   addEdge('GAP_E1', 'ME_W_L4_ENTRY', { turn: 'right' });
   addEdge('GAP_E1', 'ME_W_L3_ENTRY', { turn: 'right' });
 
   // Minor Road South Median Crossover Gap M1
   addEdge('MS_S_L3_EXIT', 'GAP_M1', { turn: 'right' });
+  addEdge('MS_S_L3_MID', 'GAP_M1', { turn: 'right' });
   addEdge('MS_S_L3_END', 'GAP_M1', { turn: 'right' });
   addEdge('GAP_M1', 'MS_N_L3_START', { turn: 'right' });
   addEdge('GAP_M1', 'MS_N_L2_START', { turn: 'right' });
@@ -694,8 +1006,28 @@ export const buildBoardEdges = () => {
   // 5. Major Road East progressions + Broken-Line Shifts
   [1, 2, 3, 4].forEach((l) => {
     addEdge(`ME_E_L${l}_EXIT`, `ME_E_L${l}_END`);
+    addEdge(`ME_E_L${l}_EXIT`, `ME_E_L${l}_MID`);
+    addEdge(`ME_E_L${l}_MID`, `ME_E_L${l}_END`);
+
     addEdge(`ME_W_L${l}_START`, `ME_W_L${l}_ENTRY`);
+    addEdge(`ME_W_L${l}_START`, `ME_W_L${l}_MID`);
+    addEdge(`ME_W_L${l}_MID`, `ME_W_L${l}_ENTRY`);
   });
+  addEdge('ME_W_L4_START', 'ME_W_L3_MID', { turn: 'left' });
+  addEdge('ME_W_L3_START', 'ME_W_L4_MID', { turn: 'right' });
+  addEdge('ME_W_L3_START', 'ME_W_L2_MID', { turn: 'left' });
+  addEdge('ME_W_L2_START', 'ME_W_L3_MID', { turn: 'right' });
+  addEdge('ME_W_L2_START', 'ME_W_L1_MID', { turn: 'left' });
+  addEdge('ME_W_L1_START', 'ME_W_L2_MID', { turn: 'right' });
+
+  addEdge('ME_W_L4_MID', 'ME_W_L3_ENTRY', { turn: 'left' });
+  addEdge('ME_W_L3_MID', 'ME_W_L4_ENTRY', { turn: 'right' });
+  addEdge('ME_W_L3_MID', 'ME_W_L2_ENTRY', { turn: 'left' });
+  addEdge('ME_W_L2_MID', 'ME_W_L3_ENTRY', { turn: 'right' });
+  addEdge('ME_W_L2_MID', 'ME_W_L1_ENTRY', { turn: 'left' });
+  addEdge('ME_W_L1_MID', 'ME_W_L2_ENTRY', { turn: 'right' });
+
+  // Legacy direct shifts on ME_W
   addEdge('ME_W_L4_START', 'ME_W_L3_ENTRY', { turn: 'left' });
   addEdge('ME_W_L3_START', 'ME_W_L4_ENTRY', { turn: 'right' });
   addEdge('ME_W_L3_START', 'ME_W_L2_ENTRY', { turn: 'left' });
@@ -710,13 +1042,40 @@ export const buildBoardEdges = () => {
   // 6. Minor Road South progressions + Broken-Line Shifts
   [1, 2, 3].forEach((l) => {
     addEdge(`MS_N_L${l}_START`, `MS_N_L${l}_ENTRY`);
+    addEdge(`MS_N_L${l}_START`, `MS_N_L${l}_MID`);
+    addEdge(`MS_N_L${l}_MID`, `MS_N_L${l}_ENTRY`);
+
     addEdge(`MS_S_L${l}_EXIT`, `MS_S_L${l}_END`);
+    addEdge(`MS_S_L${l}_EXIT`, `MS_S_L${l}_MID`);
+    addEdge(`MS_S_L${l}_MID`, `MS_S_L${l}_END`);
   });
+  addEdge('MS_N_L1_START', 'MS_N_L2_MID', { turn: 'right' });
+  addEdge('MS_N_L2_START', 'MS_N_L1_MID', { turn: 'left' });
+  addEdge('MS_N_L2_START', 'MS_N_L3_MID', { turn: 'right' });
+  addEdge('MS_N_L3_START', 'MS_N_L2_MID', { turn: 'left' });
+
+  addEdge('MS_N_L1_MID', 'MS_N_L2_ENTRY', { turn: 'right' });
+  addEdge('MS_N_L2_MID', 'MS_N_L1_ENTRY', { turn: 'left' });
+  addEdge('MS_N_L2_MID', 'MS_N_L3_ENTRY', { turn: 'right' });
+  addEdge('MS_N_L3_MID', 'MS_N_L2_ENTRY', { turn: 'left' });
+
+  // Legacy direct shifts on MS_N
   addEdge('MS_N_L1_START', 'MS_N_L2_ENTRY', { turn: 'right' });
   addEdge('MS_N_L2_START', 'MS_N_L1_ENTRY', { turn: 'left' });
   addEdge('MS_N_L2_START', 'MS_N_L3_ENTRY', { turn: 'right' });
   addEdge('MS_N_L3_START', 'MS_N_L2_ENTRY', { turn: 'left' });
 
+  addEdge('MS_S_L3_EXIT', 'MS_S_L2_MID', { turn: 'left' });
+  addEdge('MS_S_L2_EXIT', 'MS_S_L3_MID', { turn: 'right' });
+  addEdge('MS_S_L2_EXIT', 'MS_S_L1_MID', { turn: 'left' });
+  addEdge('MS_S_L1_EXIT', 'MS_S_L2_MID', { turn: 'right' });
+
+  addEdge('MS_S_L3_MID', 'MS_S_L2_END', { turn: 'left' });
+  addEdge('MS_S_L2_MID', 'MS_S_L3_END', { turn: 'right' });
+  addEdge('MS_S_L2_MID', 'MS_S_L1_END', { turn: 'left' });
+  addEdge('MS_S_L1_MID', 'MS_S_L2_END', { turn: 'right' });
+
+  // Legacy direct shifts on MS_S
   addEdge('MS_S_L3_EXIT', 'MS_S_L2_END', { turn: 'left' });
   addEdge('MS_S_L2_EXIT', 'MS_S_L3_END', { turn: 'right' });
   addEdge('MS_S_L2_EXIT', 'MS_S_L1_END', { turn: 'left' });
@@ -725,8 +1084,24 @@ export const buildBoardEdges = () => {
   // 7. Minor Road North progressions + Broken-Line Shifts
   [1, 2, 3].forEach((l) => {
     addEdge(`MN_N_L${l}_EXIT`, `MN_N_L${l}_TOP`);
+    addEdge(`MN_N_L${l}_EXIT`, `MN_N_L${l}_MID`);
+    addEdge(`MN_N_L${l}_MID`, `MN_N_L${l}_TOP`);
+
     addEdge(`MN_S_L${l}_START`, `MN_S_L${l}_ENTRY`);
+    addEdge(`MN_S_L${l}_START`, `MN_S_L${l}_MID`);
+    addEdge(`MN_S_L${l}_MID`, `MN_S_L${l}_ENTRY`);
   });
+  addEdge('MN_S_L1_START', 'MN_S_L2_MID', { turn: 'left' });
+  addEdge('MN_S_L2_START', 'MN_S_L1_MID', { turn: 'right' });
+  addEdge('MN_S_L2_START', 'MN_S_L3_MID', { turn: 'left' });
+  addEdge('MN_S_L3_START', 'MN_S_L2_MID', { turn: 'right' });
+
+  addEdge('MN_S_L1_MID', 'MN_S_L2_ENTRY', { turn: 'left' });
+  addEdge('MN_S_L2_MID', 'MN_S_L1_ENTRY', { turn: 'right' });
+  addEdge('MN_S_L2_MID', 'MN_S_L3_ENTRY', { turn: 'left' });
+  addEdge('MN_S_L3_MID', 'MN_S_L2_ENTRY', { turn: 'right' });
+
+  // Legacy direct shifts on MN_S
   addEdge('MN_S_L1_START', 'MN_S_L2_ENTRY', { turn: 'left' });
   addEdge('MN_S_L2_START', 'MN_S_L1_ENTRY', { turn: 'right' });
   addEdge('MN_S_L2_START', 'MN_S_L3_ENTRY', { turn: 'left' });
@@ -749,50 +1124,51 @@ export const buildBoardEdges = () => {
     const next = quadOrder[(i + 1) % 4];
     addEdge(`RA_${curr}_L1`, `RA_${next}_L2`, {
       isLegal: false,
-      violationReason: 'Changing lanes inside the roundabout (Ring 1 to Ring 2) is strictly prohibited by NTSA rules.'
+      violationReason: 'Roundabout Lane Change Offense: You shifted from Lane 1 to Lane 2 inside the roundabout! Under Kenyan NTSA rules, you must NEVER change lanes on a roundabout.'
     });
     addEdge(`RA_${curr}_L2`, `RA_${next}_L1`, {
       isLegal: false,
-      violationReason: 'Changing lanes inside the roundabout (Ring 2 to Ring 1) is strictly prohibited by NTSA rules.'
+      violationReason: 'Roundabout Lane Change Offense: You shifted from Lane 2 to Lane 1 inside the roundabout!'
+    });
+    addEdge(`RA_${curr}_L2`, `RA_${next}_L3`, {
+      isLegal: false,
+      violationReason: 'Roundabout Lane Change Offense: You shifted from Lane 2 to Lane 3 inside the roundabout!'
+    });
+    addEdge(`RA_${curr}_L3`, `RA_${next}_L2`, {
+      isLegal: false,
+      violationReason: 'Roundabout Lane Change Offense: You shifted from Lane 3 to Lane 2 inside the roundabout!'
     });
     addEdge(`RA_${curr}_L3`, `RA_${next}_L4`, {
       isLegal: false,
-      violationReason: 'Changing lanes inside the roundabout (Ring 3 to Ring 4) is strictly prohibited by NTSA rules.'
+      violationReason: 'Roundabout Lane Change Offense: You shifted from Lane 3 to Lane 4 inside the roundabout!'
     });
     addEdge(`RA_${curr}_L4`, `RA_${next}_L3`, {
       isLegal: false,
-      violationReason: 'Changing lanes inside the roundabout (Ring 4 to Ring 3) is strictly prohibited by NTSA rules.'
+      violationReason: 'Roundabout Lane Change Offense: You shifted from Lane 4 to Lane 3 inside the roundabout!'
     });
   });
 
-  // 9. Roundabout Entries from Major Road West (4 Lanes -> Rings 1..4 at NW)
+  // 9. Roundabout Entries from Major Road West (approaching from West)
   [1, 2, 3, 4].forEach((l) => {
-    addEdge(`MW_E_L${l}_ENTRY`, `RA_NW_L${l}`, {
-      turn: l === 1 ? 'left' : l >= 3 ? 'right' : 'none'
-    });
+    addEdge(`MW_E_L${l}_ENTRY`, `RA_NW_L${l}`, { turn: l === 1 ? 'left' : 'none' });
   });
 
-  // 10. Roundabout Entries from Major Road East (4 Lanes -> Rings 1..4 at SE)
+  // 11. Roundabout Entries from Major Road East (approaching from East)
   [1, 2, 3, 4].forEach((l) => {
-    addEdge(`ME_W_L${l}_ENTRY`, `RA_SE_L${l}`, {
-      turn: l === 1 ? 'left' : l >= 3 ? 'right' : 'none'
-    });
+    addEdge(`ME_W_L${l}_ENTRY`, `RA_SE_L${l}`, { turn: l === 1 ? 'left' : 'none' });
   });
 
-  // 11. Roundabout Entries from Minor Road South (3 Lanes -> SW Quadrant)
-  // NTSA 5 Options for Minor Road Lane 3:
-  // - Can enter Ring 3 (for 0° Straight or 90° Right into Major Road Lane 3)
-  // - Can enter Ring 4 (for 90° Right into Major Road Lane 4, 180° U-turn, or 270° Q-turn)
+  // 12. Roundabout Entries from Minor Road South (approaching from South)
   addEdge('MS_N_L1_ENTRY', 'RA_SW_L1', { turn: 'left' });
-  addEdge('MS_N_L2_ENTRY', 'RA_SW_L2', { turn: 'none' });
-  addEdge('MS_N_L3_ENTRY', 'RA_SW_L3', { turn: 'right', isLegal: true });
-  addEdge('MS_N_L3_ENTRY', 'RA_SW_L4', { turn: 'right', isLegal: true });
+  addEdge('MS_N_L2_ENTRY', 'RA_SW_L2');
+  addEdge('MS_N_L3_ENTRY', 'RA_SW_L3');
+  addEdge('MS_N_L3_ENTRY', 'RA_SW_L4', { turn: 'right' });
 
-  // 12. Roundabout Entries from Minor Road North (3 Lanes -> NE Quadrant)
+  // 13. Roundabout Entries from Minor Road North (approaching from North)
   addEdge('MN_S_L1_ENTRY', 'RA_NE_L1', { turn: 'left' });
-  addEdge('MN_S_L2_ENTRY', 'RA_NE_L2', { turn: 'none' });
-  addEdge('MN_S_L3_ENTRY', 'RA_NE_L3', { turn: 'right', isLegal: true });
-  addEdge('MN_S_L3_ENTRY', 'RA_NE_L4', { turn: 'right', isLegal: true });
+  addEdge('MN_S_L2_ENTRY', 'RA_NE_L2');
+  addEdge('MN_S_L3_ENTRY', 'RA_NE_L3');
+  addEdge('MN_S_L3_ENTRY', 'RA_NE_L4', { turn: 'right' });
 
   // 13. Roundabout Exits to Major Road East (from NE Quadrant)
   [1, 2, 3, 4].forEach((l) => {
@@ -819,47 +1195,139 @@ export const buildBoardEdges = () => {
   addEdge('RA_NW_L4', 'MN_N_L3_EXIT', { turn: 'left' });
 
   // 17. Side Access Road & Controlled Angle Parking Connections
+  // Northbound (West lane x = 350)
   addEdge('MW_E_L1_MID', 'SIDE_N_BOT', { turn: 'left' });
+  addEdge('SIDE_N_BOT', 'SIDE_N_LOWER');
+  addEdge('SIDE_N_LOWER', 'SIDE_N_MID');
+  addEdge('SIDE_N_MID', 'SIDE_N_UPPER');
+  addEdge('SIDE_N_UPPER', 'SIDE_N_TOP');
+  // Legacy direct connections preserved
   addEdge('SIDE_N_BOT', 'SIDE_N_MID');
   addEdge('SIDE_N_MID', 'SIDE_N_TOP');
   addEdge('SIDE_N_TOP', 'TOP_E_JCT_W', { turn: 'right' });
   addEdge('SIDE_N_TOP', 'TOP_W_WEST', { turn: 'left' });
 
+  // Southbound (East lane x = 376)
   addEdge('TOP_W_JCT_W', 'SIDE_S_TOP', { turn: 'left' });
   addEdge('TOP_E_JCT_W', 'SIDE_S_TOP', { turn: 'right' });
+  addEdge('SIDE_S_TOP', 'SIDE_S_UPPER');
+  addEdge('SIDE_S_UPPER', 'SIDE_S_MID');
+  addEdge('SIDE_S_MID', 'SIDE_S_LOWER');
+  addEdge('SIDE_S_LOWER', 'SIDE_S_BOT');
+  // Legacy direct connections preserved
   addEdge('SIDE_S_TOP', 'SIDE_S_MID');
   addEdge('SIDE_S_MID', 'SIDE_S_BOT');
+
+  // Merging from Side Road Southbound onto Major Road West:
+  // Can enter Lane 1 at MID, Lane 2 at MID, or merge directly into SHIFT column!
   addEdge('SIDE_S_BOT', 'MW_E_L1_MID', { turn: 'left' });
+  addEdge('SIDE_S_BOT', 'MW_E_L2_MID', { turn: 'left' });
+  addEdge('SIDE_S_BOT', 'MW_E_L1_SHIFT', { turn: 'left' });
+  addEdge('SIDE_S_BOT', 'MW_E_L2_SHIFT', { turn: 'left' });
   addEdge('SIDE_S_BOT', 'MW_E_L1_ENTRY', { turn: 'left' });
 
-  // Controlled Angle Parking Zone (Can enter from Side Road OR from Minor North L1!)
+  // Controlled Angle Parking Zone Entrance & Exit
   addEdge('SIDE_N_MID', 'AP_ENTRY', { turn: 'right' });
+  addEdge('SIDE_N_LOWER', 'AP_ENTRY', { turn: 'right' });
   addEdge('SIDE_S_MID', 'AP_ENTRY', { turn: 'left' });
+  addEdge('SIDE_S_LOWER', 'AP_ENTRY', { turn: 'left' });
   addEdge('MN_N_L1_EXIT', 'AP_EXIT_E', { turn: 'left' });
   addEdge('MN_N_L1_TOP', 'AP_EXIT_E', { turn: 'left' });
   addEdge('AP_EXIT_E', 'AP_AISLE_E');
+  addEdge('AP_EXIT_E', 'AP_AISLE_7');
+  addEdge('AP_EXIT_E', 'MN_N_L1_TOP', { turn: 'left' });
 
+  // Central Aisle continuous chain (Bidirectional maneuvering)
+  addEdge('AP_ENTRY', 'AP_AISLE_1');
+  addEdge('AP_AISLE_1', 'AP_ENTRY');
   addEdge('AP_ENTRY', 'AP_AISLE_W');
+  addEdge('AP_AISLE_W', 'AP_ENTRY');
+  addEdge('AP_ENTRY', 'SIDE_S_MID', { turn: 'left' });
+  addEdge('AP_ENTRY', 'SIDE_S_LOWER', { turn: 'left' });
+  addEdge('AP_ENTRY', 'SIDE_N_MID', { turn: 'right' });
+  addEdge('AP_ENTRY', 'SIDE_N_LOWER', { turn: 'right' });
+
+  addEdge('AP_AISLE_1', 'AP_AISLE_W');
+  addEdge('AP_AISLE_W', 'AP_AISLE_1');
+
+  addEdge('AP_AISLE_W', 'AP_AISLE_3');
+  addEdge('AP_AISLE_3', 'AP_AISLE_W');
+
+  addEdge('AP_AISLE_3', 'AP_AISLE_4');
+  addEdge('AP_AISLE_4', 'AP_AISLE_3');
+
+  addEdge('AP_AISLE_4', 'AP_AISLE_E');
+  addEdge('AP_AISLE_E', 'AP_AISLE_4');
+
+  addEdge('AP_AISLE_E', 'AP_AISLE_6');
+  addEdge('AP_AISLE_6', 'AP_AISLE_E');
+
+  addEdge('AP_AISLE_6', 'AP_AISLE_7');
+  addEdge('AP_AISLE_7', 'AP_AISLE_6');
+
+  addEdge('AP_AISLE_7', 'AP_EXIT_E');
+  addEdge('AP_EXIT_E', 'AP_AISLE_7');
+
+  // Legacy direct aisle connection preserved
   addEdge('AP_AISLE_W', 'AP_AISLE_E');
   addEdge('AP_AISLE_E', 'AP_AISLE_W');
+  addEdge('AP_AISLE_E', 'AP_EXIT_E');
 
-  // Entering Angle Bays (Forward) & Exiting Angle Bays (Reverse!)
+  // All 7 Top Angle Bays (Park Forward In, Reverse Out)
+  addEdge('AP_AISLE_1', 'AP_BAY_TOP_BAY1', { turn: 'left' });
+  addEdge('AP_BAY_TOP_BAY1', 'AP_AISLE_1', { isReverse: true, turn: 'right' });
+
+  addEdge('AP_AISLE_W', 'AP_BAY_TOP_BAY2', { turn: 'left' });
+  addEdge('AP_BAY_TOP_BAY2', 'AP_AISLE_W', { isReverse: true, turn: 'right' });
+
+  addEdge('AP_AISLE_3', 'AP_BAY_TOP_1', { turn: 'left' });
+  addEdge('AP_BAY_TOP_1', 'AP_AISLE_3', { isReverse: true, turn: 'right' });
+  // Legacy connection preserved
   addEdge('AP_AISLE_W', 'AP_BAY_TOP_1', { turn: 'left' });
   addEdge('AP_BAY_TOP_1', 'AP_AISLE_W', { isReverse: true, turn: 'right' });
+
+  addEdge('AP_AISLE_4', 'AP_BAY_TOP_BAY4', { turn: 'left' });
+  addEdge('AP_BAY_TOP_BAY4', 'AP_AISLE_4', { isReverse: true, turn: 'right' });
+
+  addEdge('AP_AISLE_E', 'AP_BAY_TOP_BAY5', { turn: 'left' });
+  addEdge('AP_BAY_TOP_BAY5', 'AP_AISLE_E', { isReverse: true, turn: 'right' });
+
+  addEdge('AP_AISLE_6', 'AP_BAY_TOP_2', { turn: 'left' });
+  addEdge('AP_BAY_TOP_2', 'AP_AISLE_6', { isReverse: true, turn: 'right' });
+  // Legacy connection preserved
+  addEdge('AP_AISLE_E', 'AP_BAY_TOP_2', { turn: 'left' });
+  addEdge('AP_BAY_TOP_2', 'AP_AISLE_E', { isReverse: true, turn: 'right' });
+
+  addEdge('AP_AISLE_7', 'AP_BAY_TOP_BAY7', { turn: 'left' });
+  addEdge('AP_BAY_TOP_BAY7', 'AP_AISLE_7', { isReverse: true, turn: 'right' });
+
+  // All 7 Bottom Angle Bays (Park Forward In, Reverse Out)
+  addEdge('AP_AISLE_1', 'AP_BAY_BOT_BAY1', { turn: 'right' });
+  addEdge('AP_BAY_BOT_BAY1', 'AP_AISLE_1', { isReverse: true, turn: 'left' });
+
+  addEdge('AP_AISLE_W', 'AP_BAY_BOT_BAY2', { turn: 'right' });
+  addEdge('AP_BAY_BOT_BAY2', 'AP_AISLE_W', { isReverse: true, turn: 'left' });
+
+  addEdge('AP_AISLE_3', 'AP_BAY_BOT_1', { turn: 'right' });
+  addEdge('AP_BAY_BOT_1', 'AP_AISLE_3', { isReverse: true, turn: 'left' });
+  // Legacy connection preserved
   addEdge('AP_AISLE_W', 'AP_BAY_BOT_1', { turn: 'right' });
   addEdge('AP_BAY_BOT_1', 'AP_AISLE_W', { isReverse: true, turn: 'left' });
 
-  addEdge('AP_AISLE_E', 'AP_BAY_TOP_2', { turn: 'left' });
-  addEdge('AP_BAY_TOP_2', 'AP_AISLE_E', { isReverse: true, turn: 'right' });
+  addEdge('AP_AISLE_4', 'AP_BAY_BOT_BAY4', { turn: 'right' });
+  addEdge('AP_BAY_BOT_BAY4', 'AP_AISLE_4', { isReverse: true, turn: 'left' });
+
+  addEdge('AP_AISLE_E', 'AP_BAY_BOT_BAY5', { turn: 'right' });
+  addEdge('AP_BAY_BOT_BAY5', 'AP_AISLE_E', { isReverse: true, turn: 'left' });
+
+  addEdge('AP_AISLE_6', 'AP_BAY_BOT_2', { turn: 'right' });
+  addEdge('AP_BAY_BOT_2', 'AP_AISLE_6', { isReverse: true, turn: 'left' });
+  // Legacy connection preserved
   addEdge('AP_AISLE_E', 'AP_BAY_BOT_2', { turn: 'right' });
   addEdge('AP_BAY_BOT_2', 'AP_AISLE_E', { isReverse: true, turn: 'left' });
 
-  // Exiting Controlled Angle Parking onto Minor Road North OR Side Access Road
-  addEdge('AP_AISLE_E', 'AP_EXIT_E');
-  addEdge('AP_EXIT_E', 'MN_N_L1_TOP', { turn: 'left' });
-  addEdge('AP_AISLE_W', 'AP_ENTRY');
-  addEdge('AP_ENTRY', 'SIDE_S_MID', { turn: 'left' });
-  addEdge('AP_ENTRY', 'SIDE_N_MID', { turn: 'right' });
+  addEdge('AP_AISLE_7', 'AP_BAY_BOT_BAY7', { turn: 'right' });
+  addEdge('AP_BAY_BOT_BAY7', 'AP_AISLE_7', { isReverse: true, turn: 'left' });
 
   // 18. Top Perimeter Two-Way Road & Flush Parking Connections
   addEdge('MN_N_L1_TOP', 'TOP_W_JCT_N', { turn: 'left' });
@@ -869,37 +1337,78 @@ export const buildBoardEdges = () => {
   addEdge('MN_N_L3_TOP', 'TOP_E_JCT_N', { turn: 'right' });
   addEdge('MN_N_L3_TOP', 'MN_S_L3_START', { turn: 'right' });
 
-  // Eastbound Top Road
-  addEdge('TOP_E_WEST', 'TOP_E_JCT_W');
+  // Eastbound Top Road: WEST -> PRE -> JCT_W -> ZEBRA1 -> FLUSH_W -> MID -> FLUSH_E -> JCT_N -> APPROACH_E -> ZEBRA2 -> EAST
+  addEdge('TOP_E_WEST', 'TOP_E_PRE');
+  addEdge('TOP_E_PRE', 'TOP_E_JCT_W');
   addEdge('TOP_E_JCT_W', 'TOP_E_ZEBRA1');
+  addEdge('TOP_E_ZEBRA1', 'TOP_E_FLUSH_W');
+  addEdge('TOP_E_FLUSH_W', 'TOP_E_MID');
+  addEdge('TOP_E_MID', 'TOP_E_FLUSH_E');
+  addEdge('TOP_E_FLUSH_E', 'TOP_E_JCT_N');
+  addEdge('TOP_E_JCT_N', 'TOP_E_APPROACH_E');
+  addEdge('TOP_E_APPROACH_E', 'TOP_E_ZEBRA2');
+  addEdge('TOP_E_ZEBRA2', 'TOP_E_EAST');
+
+  // Legacy direct connections preserved
+  addEdge('TOP_E_WEST', 'TOP_E_JCT_W');
   addEdge('TOP_E_ZEBRA1', 'TOP_E_MID');
   addEdge('TOP_E_MID', 'TOP_E_JCT_N');
   addEdge('TOP_E_JCT_N', 'TOP_E_ZEBRA2');
-  addEdge('TOP_E_ZEBRA2', 'TOP_E_EAST');
+
   addEdge('TOP_E_EAST', 'TOP_W_EAST', { turn: 'right' });
   addEdge('TOP_E_JCT_N', 'MN_S_L3_START', { turn: 'right' });
   addEdge('TOP_E_JCT_N', 'MN_S_L2_START', { turn: 'right' });
   addEdge('TOP_E_JCT_N', 'MN_S_L1_START', { turn: 'right' });
 
-  // Westbound Top Road
+  // Westbound Top Road: EAST -> ZEBRA2 -> APPROACH_E -> JCT_N -> FLUSH_E -> FLUSH_APPROACH -> FLUSH_W -> ZEBRA1 -> JCT_W -> POST -> WEST
   addEdge('TOP_W_EAST', 'TOP_W_ZEBRA2');
+  addEdge('TOP_W_ZEBRA2', 'TOP_W_APPROACH_E');
+  addEdge('TOP_W_APPROACH_E', 'TOP_W_JCT_N');
+  addEdge('TOP_W_JCT_N', 'TOP_W_FLUSH_E');
+  addEdge('TOP_W_FLUSH_E', 'TOP_W_FLUSH_APPROACH');
+  addEdge('TOP_W_FLUSH_APPROACH', 'TOP_W_FLUSH_W');
+  addEdge('TOP_W_FLUSH_W', 'TOP_W_ZEBRA1');
+  addEdge('TOP_W_ZEBRA1', 'TOP_W_JCT_W');
+  addEdge('TOP_W_JCT_W', 'TOP_W_POST');
+  addEdge('TOP_W_POST', 'TOP_W_WEST');
+
+  // Legacy direct connections preserved
   addEdge('TOP_W_ZEBRA2', 'TOP_W_JCT_N');
+  addEdge('TOP_W_JCT_N', 'TOP_W_FLUSH_APPROACH');
+  addEdge('TOP_W_FLUSH_APPROACH', 'TOP_W_ZEBRA1');
+  addEdge('TOP_W_JCT_W', 'TOP_W_WEST');
+
   addEdge('TOP_W_JCT_N', 'MN_S_L1_START', { turn: 'left' });
   addEdge('TOP_W_JCT_N', 'MN_S_L2_START', { turn: 'left' });
   addEdge('TOP_W_JCT_N', 'MN_S_L3_START', { turn: 'left' });
-  addEdge('TOP_W_JCT_N', 'TOP_W_FLUSH_APPROACH');
-  addEdge('TOP_W_FLUSH_APPROACH', 'TOP_W_ZEBRA1');
-  addEdge('TOP_W_ZEBRA1', 'TOP_W_JCT_W');
-  addEdge('TOP_W_JCT_W', 'TOP_W_WEST');
   addEdge('TOP_W_WEST', 'TOP_E_WEST', { turn: 'right' });
 
-  // Flush Parking (Enter in Reverse, Exit Forward!)
-  addEdge('TOP_W_FLUSH_APPROACH', 'FLUSH_BAY_1', { isReverse: true, turn: 'left' });
-  addEdge('FLUSH_BAY_1', 'TOP_W_ZEBRA1', { isReverse: false, turn: 'right' });
-  addEdge('FLUSH_BAY_1', 'TOP_E_MID', { isReverse: false, turn: 'right' });
+  // Flush Parking (All 4 Bays, Reverse In, Forward Out)
+  // Bay 1 (FLUSH_BAY_2):
   addEdge('TOP_W_FLUSH_APPROACH', 'FLUSH_BAY_2', { isReverse: true, turn: 'left' });
+  addEdge('TOP_W_FLUSH_W', 'FLUSH_BAY_2', { isReverse: true, turn: 'left' });
   addEdge('FLUSH_BAY_2', 'TOP_W_ZEBRA1', { isReverse: false, turn: 'right' });
   addEdge('FLUSH_BAY_2', 'TOP_E_MID', { isReverse: false, turn: 'right' });
+  addEdge('FLUSH_BAY_2', 'TOP_E_FLUSH_W', { isReverse: false, turn: 'right' });
+
+  // Bay 2 (FLUSH_BAY_3):
+  addEdge('TOP_W_FLUSH_APPROACH', 'FLUSH_BAY_3', { isReverse: true, turn: 'left' });
+  addEdge('FLUSH_BAY_3', 'TOP_W_FLUSH_W', { isReverse: false, turn: 'right' });
+  addEdge('FLUSH_BAY_3', 'TOP_W_ZEBRA1', { isReverse: false, turn: 'right' });
+  addEdge('FLUSH_BAY_3', 'TOP_E_MID', { isReverse: false, turn: 'right' });
+
+  // Bay 3 (FLUSH_BAY_1):
+  addEdge('TOP_W_FLUSH_APPROACH', 'FLUSH_BAY_1', { isReverse: true, turn: 'left' });
+  addEdge('FLUSH_BAY_1', 'TOP_W_ZEBRA1', { isReverse: false, turn: 'right' });
+  addEdge('FLUSH_BAY_1', 'TOP_W_FLUSH_W', { isReverse: false, turn: 'right' });
+  addEdge('FLUSH_BAY_1', 'TOP_E_MID', { isReverse: false, turn: 'right' });
+  addEdge('FLUSH_BAY_1', 'TOP_E_FLUSH_E', { isReverse: false, turn: 'right' });
+
+  // Bay 4 (FLUSH_BAY_4):
+  addEdge('TOP_W_FLUSH_E', 'FLUSH_BAY_4', { isReverse: true, turn: 'left' });
+  addEdge('TOP_W_FLUSH_APPROACH', 'FLUSH_BAY_4', { isReverse: true, turn: 'left' });
+  addEdge('FLUSH_BAY_4', 'TOP_W_FLUSH_APPROACH', { isReverse: false, turn: 'right' });
+  addEdge('FLUSH_BAY_4', 'TOP_E_FLUSH_E', { isReverse: false, turn: 'right' });
 
   // 19. Mistake Edges on Two-Way Single Carriageways (Kenyan Keep-Left Violations)
   // Driving against traffic on Side Access Road:

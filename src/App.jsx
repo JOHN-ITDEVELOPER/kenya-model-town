@@ -605,6 +605,7 @@ export default function App() {
       let lastBlinkerTick = 0;
       let smoothedAngle = null;
       let lastIsReverse = null;
+      let lastMappedIdx = -1;
 
       const step = (timestamp) => {
         if (!startTime) startTime = timestamp;
@@ -632,7 +633,7 @@ export default function App() {
             stepCount - 1,
             Math.floor((activeSeg.segIndex / Math.max(1, segments.length)) * stepCount)
           );
-          setActiveDemoStepIdx((prev) => (prev === mappedIdx ? prev : mappedIdx));
+          if (mappedIdx !== lastMappedIdx) { lastMappedIdx = mappedIdx; setActiveDemoStepIdx(mappedIdx); }
         }
 
         let x, y, rawAngle;

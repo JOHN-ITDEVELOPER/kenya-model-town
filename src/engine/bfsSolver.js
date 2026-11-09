@@ -296,18 +296,19 @@ export const findShortestValidNtsaRoute = (
   if (!startId || !targetId) return null;
   if (startId === targetId) return [startId];
 
-  const queue = [[startId]];
-  const MAX_ITERATIONS = 12000;
+  const queue = [{ path: [startId], r4Count: 0, wpMask: 0 }];
+  const visited = new Map();
+  const MAX_ITERATIONS = 35000;
   let iterations = 0;
 
   while (queue.length > 0 && iterations < MAX_ITERATIONS) {
     iterations++;
-    const currentPath = queue.shift();
-    const lastNodeId = currentPath[currentPath.length - 1];
+    const { path, r4Count, wpMask } = queue.shift();
+    const lastNodeId = path[path.length - 1];
 
     if (lastNodeId === targetId) {
       const check = validateNtsaRoute(
-        currentPath,
+        path,
         targetId,
         blockedNodes,
         vehicleType,
@@ -315,26 +316,49 @@ export const findShortestValidNtsaRoute = (
         requiredWaypoints
       );
       if (check.isValid) {
-        return currentPath;
+        return path;
       }
       continue;
     }
 
-    if (currentPath.length > 17) continue;
+    if (path.length > 22) continue;
 
     const outgoing = ALL_EDGES.filter((e) => e.from === lastNodeId && e.isLegal);
     for (const edge of outgoing) {
       const nextId = edge.to;
       if (blockedNodes.includes(nextId)) continue;
 
-      // Allow full 360° O-turn on Roundabout Ring 4, otherwise prevent repeating the same directed edge
-      const edgeRepeatCount = currentPath.filter(
-        (nid, i) => i < currentPath.length - 1 && nid === lastNodeId && currentPath[i + 1] === nextId
-      ).length;
-      const isRing4 = BOARD_NODES[lastNodeId]?.ring === 4 && BOARD_NODES[nextId]?.ring === 4;
-      if (edgeRepeatCount >= (isRing4 ? 2 : 1)) continue;
+      // Disallow immediate U-turn / ping-pong: A -> B -> A (unless B was a parking bay)
+      if (path.length >= 2 && path[path.length - 2] === nextId) {
+        const lastIsBay = BOARD_NODES[lastNodeId]?.zone?.includes('bay');
+        if (!lastIsBay) continue;
+      }
 
-      queue.push([...currentPath, nextId]);
+      let newR4Count = r4Count;
+      const isRing4Edge = BOARD_NODES[lastNodeId]?.ring === 4 && BOARD_NODES[nextId]?.ring === 4;
+      if (isRing4Edge) {
+        newR4Count++;
+        if (newR4Count > 6) continue;
+      }
+
+      let newWpMask = wpMask;
+      requiredWaypoints.forEach((req, idx) => {
+        if (nextId === req) newWpMask |= (1 << idx);
+      });
+
+      if (nextId !== targetId) {
+        const loopTag = isRing4Edge ? Math.floor(newR4Count / 4) : 0;
+        const stateKey = `${nextId}_${newWpMask}_${loopTag}`;
+        const prevBest = visited.get(stateKey);
+        if (prevBest !== undefined && prevBest <= path.length + 1) continue;
+        visited.set(stateKey, path.length + 1);
+      }
+
+      queue.push({
+        path: [...path, nextId],
+        r4Count: newR4Count,
+        wpMask: newWpMask
+      });
     }
   }
   return null;
