@@ -9,7 +9,7 @@ import {
   orderBy,
   serverTimestamp
 } from 'firebase/firestore';
-import { db, isFirebaseConfigured } from './firebase';
+import { db, isFirebaseConfigured } from './firebase.js';
 
 const COLLECTION_NAME = 'challenges';
 
@@ -98,6 +98,7 @@ export const saveCustomChallenge = async (challengeData, user) => {
     title: challengeData.title?.trim() || 'Untitled NTSA Challenge',
     number: challengeData.number || 99,
     badge: challengeData.badge?.trim() || 'Instructor Custom',
+    price: Math.max(0, Math.round(Number(challengeData.price) || 0)),
     ruleApplied: challengeData.ruleApplied?.trim() || 'Apply standard NTSA Model Town Board rules.',
     carColor: challengeData.carColor || '#ef4444',
     carLabel: challengeData.carLabel || 'RED CAR',

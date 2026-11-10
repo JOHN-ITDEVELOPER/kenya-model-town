@@ -5,8 +5,8 @@ import { getFirestore } from 'firebase/firestore';
 // Helper to read env variables with or without VITE_ prefix (supports Vercel, Netlify, and local .env)
 const getEnv = (key) => {
   return (
-    import.meta.env[`VITE_${key}`] ||
-    import.meta.env[key] ||
+    import.meta.env?.[`VITE_${key}`] ||
+    import.meta.env?.[key] ||
     ''
   );
 };

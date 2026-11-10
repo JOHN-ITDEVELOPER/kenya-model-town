@@ -180,6 +180,7 @@ export default function AdminChallengeBuilder({
       id: null,
       title: '',
       badge: 'Instructor Custom',
+      price: 0,
       ruleApplied: 'Rule 1: Use the shortest and most correct route without using parking.',
       prompt: '',
       hint: '',
@@ -578,6 +579,47 @@ export default function AdminChallengeBuilder({
                 </div>
               </div>
 
+              {/* Per-Challenge Unlock Price (KES) */}
+              <div className="p-2.5 rounded-lg bg-slate-900 border border-amber-500/30 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold text-amber-300">
+                    Challenge Price (KES):
+                  </span>
+                  <input
+                    type="number"
+                    min="0"
+                    step="10"
+                    value={builderState.price ?? 0}
+                    onChange={(e) =>
+                      setBuilderState((prev) => ({
+                        ...prev,
+                        price: Math.max(0, Math.round(Number(e.target.value) || 0))
+                      }))
+                    }
+                    className="w-20 bg-slate-950 border border-slate-700 rounded px-2 py-1 text-xs font-bold text-white focus:outline-none focus:border-amber-400"
+                  />
+                </div>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {[0, 20, 30, 50, 100].map((preset) => {
+                    const active = (Number(builderState.price) || 0) === preset;
+                    return (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => setBuilderState((prev) => ({ ...prev, price: preset }))}
+                        className={`px-2 py-0.5 rounded text-[10px] font-extrabold border transition ${
+                          active
+                            ? 'bg-amber-500 border-amber-300 text-slate-950'
+                            : 'bg-slate-950 border-slate-700 text-slate-300 hover:border-amber-400/50'
+                        }`}
+                      >
+                        {preset === 0 ? 'Free' : `KES ${preset}`}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Examiner Prompt */}
               <div>
                 <label className="text-[11px] font-bold text-slate-300 block mb-1">
@@ -781,9 +823,20 @@ export default function AdminChallengeBuilder({
                         <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
                           {ch.badge || 'Custom'}
                         </span>
-                        <span className="text-[10px] text-slate-500 uppercase font-bold">
-                          {ch.vehicleType || 'saloon'}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`text-[10px] font-black px-1.5 py-0.5 rounded border ${
+                              Number(ch.price) > 0
+                                ? 'bg-amber-500/20 text-amber-300 border-amber-400/40'
+                                : 'bg-slate-800 text-slate-400 border-slate-700'
+                            }`}
+                          >
+                            {Number(ch.price) > 0 ? `KES ${ch.price}` : 'FREE'}
+                          </span>
+                          <span className="text-[10px] text-slate-500 uppercase font-bold">
+                            {ch.vehicleType || 'saloon'}
+                          </span>
+                        </div>
                       </div>
                       <h3 className="text-xs font-black text-white group-hover:text-emerald-300 transition line-clamp-1">
                         {ch.title}

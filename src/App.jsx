@@ -19,17 +19,31 @@ import {
   ShieldCheck,
   User as UserIcon,
   PlusCircle,
-  HelpCircle
+  HelpCircle,
+  Users,
+  Lock
 } from 'lucide-react';
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
-import { auth, googleProvider, isFirebaseConfigured, ADMIN_EMAIL } from './services/firebase';
-import { subscribeToCustomChallenges } from './services/challengeService';
+import { auth, googleProvider, isFirebaseConfigured } from './services/firebase';
+import { subscribeToCustomChallenges, isUserAdmin } from './services/challengeService';
+import {
+  syncUserProfileOnLogin,
+  subscribeToUserProfile,
+  subscribeToMonetizationSettings,
+  recordChallengeAttempt,
+  canAccessChallenge,
+  hasActive90DayPass,
+  getRemainingPassDays,
+  DEFAULT_PASS_PRICE_KES
+} from './services/userService';
 import { NODES, BOARD_NODES, EDGES, ALL_EDGES, RA_CX, RA_CY, RING_RADII } from './data/boardGraph';
 import { CHALLENGES, NTSA_CHALLENGES } from './data/challenges';
 import { validateNtsaRoute, findShortestValidNtsaRoute } from './engine/bfsSolver';
 import BoardCanvas from './components/BoardCanvas';
 import InstructorPanel from './components/InstructorPanel';
 import AdminChallengeBuilder from './components/AdminChallengeBuilder';
+import AdminDashboard from './components/AdminDashboard';
+import ChallengeUnlockModal from './components/ChallengeUnlockModal';
 
 const useDrivingSound = (muted) => {
   const audioCtxRef = useRef(null);
@@ -150,22 +164,27 @@ export default function App() {
   const [activeChallengeIdx, setActiveChallengeIdx] = useState(0);
   const currentChallenge = allChallenges[activeChallengeIdx] || allChallenges[0] || NTSA_CHALLENGES[0];
 
-  // Firebase Auth State
+  // Firebase Auth, User Profile & Monetization State
   const [user, setUser] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [showAdminBuilder, setShowAdminBuilder] = useState(false);
+  const [showAdminDashboard, setShowAdminDashboard] = useState(false);
+  const [unlockModalChallenge, setUnlockModalChallenge] = useState(null);
+  const [monetizationSettings, setMonetizationSettings] = useState({
+    passPriceKes: DEFAULT_PASS_PRICE_KES,
+    passDurationDays: 90
+  });
 
-  // Any authenticated instructor signed in with Google has full Challenge Creator rights
-  const isAdmin = useMemo(() => {
-    if (!user || !user.email) return false;
-    const userEmail = user.email.trim().toLowerCase();
-    const envAdmin = (import.meta.env?.VITE_ADMIN_EMAIL || import.meta.env?.ADMIN_EMAIL || '').toLowerCase();
-    const adminList = [
-      'johnnjenga7852@gmail.com',
-      ...envAdmin.split(',').map((e) => e.trim())
-    ].filter(Boolean);
-    return adminList.includes(userEmail);
-  }, [user]);
+  const isAdmin = useMemo(() => isUserAdmin(user), [user]);
+
+  // Listen to monetization settings (90-day pass price)
+  useEffect(() => {
+    const unsub = subscribeToMonetizationSettings(setMonetizationSettings);
+    return () => {
+      if (typeof unsub === 'function') unsub();
+    };
+  }, []);
 
   useEffect(() => {
     if (!isFirebaseConfigured || !auth) {
@@ -175,11 +194,42 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setAuthLoading(false);
+      if (u) {
+        syncUserProfileOnLogin(u).catch((err) =>
+          console.warn('User profile sync skipped:', err?.message)
+        );
+      } else {
+        setUserProfile(null);
+      }
     });
     return () => {
       if (typeof unsubscribe === 'function') unsubscribe();
     };
   }, []);
+
+  // Subscribe to signed-in user's profile & unlocks
+  useEffect(() => {
+    if (!user?.uid) {
+      setUserProfile(null);
+      return;
+    }
+    const unsub = subscribeToUserProfile(user.uid, (prof) => {
+      setUserProfile(prof);
+      if (Array.isArray(prof?.completedChallenges) && prof.completedChallenges.length > 0) {
+        setCompletedChallenges((prev) =>
+          Array.from(new Set([...prev, ...prof.completedChallenges]))
+        );
+      }
+    });
+    return () => {
+      if (typeof unsub === 'function') unsub();
+    };
+  }, [user?.uid]);
+
+  const isCurrentChallengeLocked = useMemo(
+    () => mode === 'challenges' && !canAccessChallenge(currentChallenge, userProfile, isAdmin),
+    [mode, currentChallenge, userProfile, isAdmin]
+  );
 
   const handleGoogleSignIn = async () => {
     if (!isFirebaseConfigured || !auth || !googleProvider) {
@@ -211,6 +261,8 @@ export default function App() {
     if (auth) {
       await signOut(auth);
       setShowAdminBuilder(false);
+      setShowAdminDashboard(false);
+      setUnlockModalChallenge(null);
     }
   };
 
@@ -220,6 +272,7 @@ export default function App() {
     id: null,
     title: '',
     badge: 'Instructor Custom',
+    price: 0,
     ruleApplied: 'Rule 1: Use the shortest and most correct route without using parking.',
     prompt: '',
     hint: '',
@@ -442,13 +495,18 @@ export default function App() {
   // Available next nodes from the end of `plottedPath`
   const lastPlottedNodeId = plottedPath[plottedPath.length - 1];
   const validNextNodeIds = useMemo(() => {
+    if (isCurrentChallengeLocked && !showAdminBuilder) return [];
     if (!lastPlottedNodeId) return [];
     return ALL_EDGES.filter((e) => e.from === lastPlottedNodeId && e.isLegal).map((e) => e.to);
-  }, [lastPlottedNodeId]);
+  }, [lastPlottedNodeId, isCurrentChallengeLocked, showAdminBuilder]);
 
   // Handle clicking a node on the board
   const handleNodeClick = (nodeId) => {
     if (isDriving) return;
+    if (isCurrentChallengeLocked && !showAdminBuilder) {
+      setUnlockModalChallenge(currentChallenge);
+      return;
+    }
     setInspectedNodeId(nodeId);
 
     // If Admin Builder mode is active, handle builder placement tools
@@ -725,6 +783,9 @@ export default function App() {
           );
           setVerdict(result);
           playVerdictSound(result.isValid);
+          if (mode === 'challenges' && user && !isInstructorDemo) {
+            recordChallengeAttempt(user, currentChallenge.id, result.isValid);
+          }
           if (!result.isValid) {
             // Automatically open the Solution & Failure Guide when the student fails!
             setShowSolutionGuide(true);
@@ -744,6 +805,7 @@ export default function App() {
       vehicleType,
       mode,
       currentChallenge,
+      user,
       solutionCommentarySteps.length,
       playClick,
       playReverseBeep,
@@ -754,6 +816,10 @@ export default function App() {
   // Watch Instructor Demonstrate the Official Solution
   const handleDemonstrateSolution = () => {
     if (isDriving) return;
+    if (isCurrentChallengeLocked) {
+      setUnlockModalChallenge(currentChallenge);
+      return;
+    }
     if (officialSolutionPath && officialSolutionPath.length >= 2) {
       setShowSolutionGuide(true);
       setPlottedPath(officialSolutionPath);
@@ -884,17 +950,37 @@ export default function App() {
             {user ? (
               <div className="flex items-center gap-2">
                 {isAdmin && (
-                  <button
-                    onClick={() => setShowAdminBuilder((prev) => !prev)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition flex items-center gap-1.5 ${
-                      showAdminBuilder
-                        ? 'bg-amber-500 border-amber-300 text-slate-950 font-black shadow-lg shadow-amber-500/20'
-                        : 'bg-amber-500/20 border-amber-400/40 text-amber-300 hover:bg-amber-500/30'
-                    }`}
-                  >
-                    <PlusCircle className="w-3.5 h-3.5" />
-                    {showAdminBuilder ? 'Close Creator' : 'Create Challenge'}
-                  </button>
+                  <>
+                    <button
+                      onClick={() => {
+                        setShowAdminDashboard((prev) => !prev);
+                        setShowAdminBuilder(false);
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition flex items-center gap-1.5 ${
+                        showAdminDashboard
+                          ? 'bg-emerald-500 border-emerald-300 text-slate-950 font-black shadow-lg shadow-emerald-500/20'
+                          : 'bg-emerald-500/15 border-emerald-400/40 text-emerald-300 hover:bg-emerald-500/25'
+                      }`}
+                      title="View registered users, unlocks, and manage 90-day passes"
+                    >
+                      <Users className="w-3.5 h-3.5" />
+                      {showAdminDashboard ? 'Close Users' : 'Dashboard'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowAdminBuilder((prev) => !prev);
+                        setShowAdminDashboard(false);
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition flex items-center gap-1.5 ${
+                        showAdminBuilder
+                          ? 'bg-amber-500 border-amber-300 text-slate-950 font-black shadow-lg shadow-amber-500/20'
+                          : 'bg-amber-500/20 border-amber-400/40 text-amber-300 hover:bg-amber-500/30'
+                      }`}
+                    >
+                      <PlusCircle className="w-3.5 h-3.5" />
+                      {showAdminBuilder ? 'Close Creator' : 'Create Challenge'}
+                    </button>
+                  </>
                 )}
                 <div
                   className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 text-xs"
@@ -912,11 +998,15 @@ export default function App() {
                   <span className="font-bold text-slate-200 hidden sm:inline truncate max-w-[100px]">
                     {user.displayName?.split(' ')[0] || user.email?.split('@')[0]}
                   </span>
-                  {isAdmin && (
+                  {isAdmin ? (
                     <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
                       Admin
                     </span>
-                  )}
+                  ) : hasActive90DayPass(userProfile) ? (
+                    <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-400/30">
+                      90d Pass ({getRemainingPassDays(userProfile)}d)
+                    </span>
+                  ) : null}
                 </div>
                 <button
                   onClick={handleSignOut}
@@ -930,10 +1020,10 @@ export default function App() {
               <button
                 onClick={handleGoogleSignIn}
                 className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 flex items-center gap-1.5 shadow transition"
-                title="Sign in with Google to access Instructor Admin features"
+                title="Sign in with Google to save progress and unlock custom challenges"
               >
                 <LogIn className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Instructor Sign In</span>
+                <span>Sign In</span>
               </button>
             )}
           </div>
@@ -978,9 +1068,9 @@ export default function App() {
 
               <button
                 onClick={handleDemonstrateSolution}
-                disabled={isDriving}
-                className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 flex items-center gap-1.5 disabled:opacity-50 transition"
-                title="Watch the NTSA Instructor demonstrate the step-by-step legal solution"
+                disabled={isDriving || isCurrentChallengeLocked}
+                className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 flex items-center gap-1.5 disabled:opacity-40 transition"
+                title={isCurrentChallengeLocked ? 'Unlock this challenge to view the solution' : 'Watch the NTSA Instructor demonstrate the step-by-step legal solution'}
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 Watch Instructor Solution
@@ -988,7 +1078,7 @@ export default function App() {
 
               <button
                 onClick={() => animateCarAlongPath(plottedPath, false)}
-                disabled={isDriving || plottedPath.length < 2}
+                disabled={isDriving || plottedPath.length < 2 || isCurrentChallengeLocked}
                 className="px-4 py-1.5 rounded-lg text-xs font-extrabold bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-slate-950 shadow-lg shadow-emerald-900/40 flex items-center gap-1.5 disabled:opacity-40 transition"
               >
                 <Play className="w-3.5 h-3.5 fill-current" />
@@ -996,6 +1086,16 @@ export default function App() {
               </button>
             </div>
           </div>
+
+          {/* Admin User & Revenue Dashboard */}
+          {showAdminDashboard && isAdmin && (
+            <AdminDashboard
+              user={user}
+              customChallenges={customChallenges}
+              monetizationSettings={monetizationSettings}
+              onClose={() => setShowAdminDashboard(false)}
+            />
+          )}
 
           {/* Admin Challenge Builder Dock when active */}
           {showAdminBuilder && isAdmin && (
@@ -1023,33 +1123,76 @@ export default function App() {
             />
           )}
 
-          {/* BoardCanvas Component */}
-          <BoardCanvas
-            mode={mode}
-            setCarColor={setCarColor}
-            playClick={playClick}
-            showSolutionGuide={showSolutionGuide}
-            activeDemoStepIdx={activeDemoStepIdx}
-            solutionCommentarySteps={solutionCommentarySteps}
-            officialSolutionPath={officialSolutionPath}
-            plottedPath={plottedPath}
-            startNodeId={showAdminBuilder ? builderState.startNode : startNodeId}
-            targetNodeId={showAdminBuilder ? builderState.targetNode : targetNodeId}
-            blockedNodes={showAdminBuilder ? builderState.blockedNodes : blockedNodes}
-            parkedCars={showAdminBuilder ? builderState.parkedCars : (currentChallenge?.parkedCars || [])}
-            showWaypoints={showWaypoints}
-            validNextNodeIds={validNextNodeIds}
-            showRuleInspector={showRuleInspector}
-            inspectedNodeId={inspectedNodeId}
-            carPose={carPose}
-            carColor={showAdminBuilder ? (builderState.carColor || '#ef4444') : (currentChallenge?.carColor || carColor)}
-            carLabel={showAdminBuilder ? (builderState.carLabel || 'RED CAR') : (currentChallenge?.carLabel || carLabel)}
-            vehicleType={showAdminBuilder ? builderState.vehicleType : vehicleType}
-            currentChallenge={currentChallenge}
-            handleNodeClick={handleNodeClick}
-            lastPlottedNodeId={lastPlottedNodeId}
-            isDriving={isDriving}
-          />
+          {/* BoardCanvas Component with Paywall Overlay if Paid Challenge is Locked */}
+          <div className="relative">
+            <BoardCanvas
+              mode={mode}
+              setCarColor={setCarColor}
+              playClick={playClick}
+              showSolutionGuide={isCurrentChallengeLocked ? false : showSolutionGuide}
+              activeDemoStepIdx={activeDemoStepIdx}
+              solutionCommentarySteps={isCurrentChallengeLocked ? [] : solutionCommentarySteps}
+              officialSolutionPath={isCurrentChallengeLocked ? [] : officialSolutionPath}
+              plottedPath={plottedPath}
+              startNodeId={showAdminBuilder ? builderState.startNode : startNodeId}
+              targetNodeId={showAdminBuilder ? builderState.targetNode : targetNodeId}
+              blockedNodes={showAdminBuilder ? builderState.blockedNodes : blockedNodes}
+              parkedCars={showAdminBuilder ? builderState.parkedCars : (currentChallenge?.parkedCars || [])}
+              showWaypoints={showWaypoints}
+              validNextNodeIds={validNextNodeIds}
+              showRuleInspector={showRuleInspector}
+              inspectedNodeId={inspectedNodeId}
+              carPose={carPose}
+              carColor={showAdminBuilder ? (builderState.carColor || '#ef4444') : (currentChallenge?.carColor || carColor)}
+              carLabel={showAdminBuilder ? (builderState.carLabel || 'RED CAR') : (currentChallenge?.carLabel || carLabel)}
+              vehicleType={showAdminBuilder ? builderState.vehicleType : vehicleType}
+              currentChallenge={currentChallenge}
+              handleNodeClick={handleNodeClick}
+              lastPlottedNodeId={lastPlottedNodeId}
+              isDriving={isDriving}
+            />
+
+            {isCurrentChallengeLocked && !showAdminBuilder && (
+              <div className="absolute inset-0 z-20 rounded-2xl bg-slate-950/70 backdrop-blur-[3px] flex items-center justify-center p-4">
+                <div className="bg-slate-900 border-2 border-amber-500/50 rounded-2xl p-5 max-w-md w-full text-center shadow-2xl space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-400 mx-auto">
+                    <Lock className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] font-black uppercase tracking-wider text-amber-400">
+                      Locked Custom Challenge • KES {currentChallenge.price}
+                    </div>
+                    <h3 className="text-base font-black text-white mt-0.5">{currentChallenge.title}</h3>
+                    <p className="text-xs text-slate-300 mt-1.5 leading-relaxed">
+                      Official Q1–Q10 are free. Unlock this custom NTSA scenario for{' '}
+                      <strong className="text-amber-300">KES {currentChallenge.price}</strong> or get a{' '}
+                      <strong className="text-emerald-300">
+                        90-Day Pass (KES {monetizationSettings.passPriceKes})
+                      </strong>{' '}
+                      to unlock every custom challenge for your entire 3-month driving class!
+                    </p>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setUnlockModalChallenge(currentChallenge)}
+                      className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 text-xs font-black flex items-center justify-center gap-1.5 shadow-lg transition"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      Unlock Now (M-Pesa)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => loadChallenge(0)}
+                      className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition"
+                    >
+                      Back to Free Q1–Q10
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* InstructorPanel Component */}
@@ -1057,9 +1200,12 @@ export default function App() {
           mode={mode}
           challengesList={allChallenges}
           user={user}
+          userProfile={userProfile}
           isAdmin={isAdmin}
           showAdminBuilder={showAdminBuilder}
           setShowAdminBuilder={setShowAdminBuilder}
+          onOpenUnlockModal={(ch) => setUnlockModalChallenge(ch)}
+          passPriceKes={monetizationSettings.passPriceKes}
           activeChallengeIdx={activeChallengeIdx}
           currentChallenge={currentChallenge}
           completedChallenges={completedChallenges}
@@ -1081,6 +1227,16 @@ export default function App() {
           inspectedNode={inspectedNode}
         />
       </div>
+
+      {unlockModalChallenge && (
+        <ChallengeUnlockModal
+          challenge={unlockModalChallenge}
+          passPriceKes={monetizationSettings.passPriceKes}
+          user={user}
+          onSignIn={handleGoogleSignIn}
+          onClose={() => setUnlockModalChallenge(null)}
+        />
+      )}
     </div>
   );
 }

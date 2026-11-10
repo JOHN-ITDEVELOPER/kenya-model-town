@@ -1,0 +1,48 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.email == 'johnnjenga7852@gmail.com';
+    }
+
+    // Custom Instructor Challenges
+    match /challenges/{challengeId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Platform Monetization Settings (e.g. 90-day pass price)
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Registered Learners & Entitlements
+    match /users/{userId} {
+      allow read: if isAdmin() || (isSignedIn() && request.auth.uid == userId);
+
+      // Students can create their own free-tier profile on initial login
+      allow create: if isAdmin() || (
+        isSignedIn() &&
+        request.auth.uid == userId &&
+        request.resource.data.role == 'student' &&
+        request.resource.data.unlockedChallengeIds.size() == 0 &&
+        request.resource.data.passExpiresAt == null
+      );
+
+      // Students can update profile/progress only; entitlements remain admin/server-only
+      allow update: if isAdmin() || (
+        isSignedIn() &&
+        request.auth.uid == userId &&
+        !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['unlockedChallengeIds', 'passExpiresAt', 'role'])
+      );
+
+      allow delete: if isAdmin();
+    }
+  }
+}
