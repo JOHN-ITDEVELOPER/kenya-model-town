@@ -1,7 +1,8 @@
-import { FieldValue } from 'firebase-admin/firestore';
 import {
   getFirebaseAdmin,
-  verifyFirebaseBearerToken
+  verifyFirebaseBearerToken,
+  toFirestoreFields,
+  fsTimestamp
 } from '../_lib/firebaseAdmin.js';
 import {
   getDarajaConfig,
@@ -11,6 +12,7 @@ import {
   resolveCallbackUrl,
   initiateStkPush
 } from '../_lib/daraja.js';
+import { toMillisSafe } from '../_lib/fulfillPayment.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -23,7 +25,12 @@ export default async function handler(req, res) {
     const cfg = getDarajaConfig();
     assertDarajaConfigured(cfg);
 
-    const { plan, challengeId, phoneNumber } = req.body || {};
+    const rawBody =
+      typeof req.body === 'string' && req.body.trim()
+        ? JSON.parse(req.body)
+        : req.body || {};
+    const { plan, challengeId, phoneNumber } = rawBody;
+
     if (plan !== 'single' && plan !== 'pass90') {
       return res.status(400).json({
         error: 'Invalid payment plan. Choose either single challenge or 90-day pass.'
@@ -39,20 +46,19 @@ export default async function handler(req, res) {
     let accountReference = 'NTSA-MTB';
     let transactionDesc = 'NTSA MTB Access';
 
-    const userRef = adminDb.collection('users').doc(decodedUser.uid);
-    const userSnap = await userRef.get();
-    const userData = userSnap.exists ? userSnap.data() : null;
+    const userSnap = await adminDb.getDoc('users', decodedUser.uid);
+    const userData = userSnap.exists ? userSnap.data : null;
 
-    if (userData?.passExpiresAt?.toMillis && userData.passExpiresAt.toMillis() > Date.now() && plan === 'single') {
+    if (toMillisSafe(userData?.passExpiresAt) > Date.now() && plan === 'single') {
       return res.status(409).json({
         error: 'Your 90-Day Pass is already active and unlocks every custom challenge.'
       });
     }
 
     if (plan === 'pass90') {
-      const settingsSnap = await adminDb.collection('settings').doc('monetization').get();
+      const settingsSnap = await adminDb.getDoc('settings', 'monetization');
       const configuredPrice = settingsSnap.exists
-        ? Number(settingsSnap.data()?.passPriceKes)
+        ? Number(settingsSnap.data?.passPriceKes)
         : 300;
       amount = Math.round(configuredPrice > 0 ? configuredPrice : 300);
       accountReference = 'NTSA-90D';
@@ -61,11 +67,11 @@ export default async function handler(req, res) {
       if (!challengeId || typeof challengeId !== 'string') {
         return res.status(400).json({ error: 'Challenge ID is required for single unlock.' });
       }
-      const challengeSnap = await adminDb.collection('challenges').doc(challengeId).get();
+      const challengeSnap = await adminDb.getDoc('challenges', challengeId);
       if (!challengeSnap.exists) {
         return res.status(404).json({ error: 'Custom challenge not found.' });
       }
-      const chData = challengeSnap.data();
+      const chData = challengeSnap.data;
       amount = Math.round(Number(chData?.price) || 0);
       if (amount < 1) {
         return res.status(400).json({
@@ -108,11 +114,9 @@ export default async function handler(req, res) {
       });
     }
 
-    const batch = adminDb.batch();
-    const paymentRef = adminDb.collection('payments').doc(checkoutRequestId);
-    const internalRef = adminDb.collection('mpesa_internal').doc(checkoutRequestId);
+    const nowTs = fsTimestamp(new Date());
 
-    batch.set(paymentRef, {
+    const paymentFields = {
       checkoutRequestId,
       uid: decodedUser.uid,
       userEmail: decodedUser.email || '',
@@ -132,20 +136,33 @@ export default async function handler(req, res) {
       customerMessage:
         stkResult.CustomerMessage ||
         'Success. Request accepted for processing.',
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
+      createdAt: nowTs,
+      updatedAt: nowTs,
       completedAt: null
-    });
+    };
 
-    batch.set(internalRef, {
+    const internalFields = {
       checkoutRequestId,
       merchantRequestId,
       callbackNonce: nonce,
       uid: decodedUser.uid,
-      createdAt: FieldValue.serverTimestamp()
-    });
+      createdAt: nowTs
+    };
 
-    await batch.commit();
+    await adminDb.commitWrites([
+      {
+        update: {
+          name: adminDb.docName('payments', checkoutRequestId),
+          fields: toFirestoreFields(paymentFields)
+        }
+      },
+      {
+        update: {
+          name: adminDb.docName('mpesa_internal', checkoutRequestId),
+          fields: toFirestoreFields(internalFields)
+        }
+      }
+    ]);
 
     return res.status(200).json({
       checkoutRequestId,
@@ -165,4 +182,3 @@ export default async function handler(req, res) {
     });
   }
 }
-

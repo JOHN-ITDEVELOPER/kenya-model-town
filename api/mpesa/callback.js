@@ -32,10 +32,7 @@ export default async function handler(req, res) {
     }
 
     const { adminDb } = getFirebaseAdmin();
-    const internalSnap = await adminDb
-      .collection('mpesa_internal')
-      .doc(checkoutRequestId)
-      .get();
+    const internalSnap = await adminDb.getDoc('mpesa_internal', checkoutRequestId);
 
     if (!internalSnap.exists) {
       return res.status(404).json({
@@ -44,7 +41,7 @@ export default async function handler(req, res) {
       });
     }
 
-    const internalData = internalSnap.data();
+    const internalData = internalSnap.data;
 
     if (internalData.merchantRequestId !== merchantRequestId) {
       return res.status(403).json({

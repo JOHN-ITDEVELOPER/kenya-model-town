@@ -22,18 +22,23 @@ export default async function handler(req, res) {
 
   try {
     const decodedUser = await verifyFirebaseBearerToken(req);
-    const { checkoutRequestId } = req.body || {};
+    const rawBody =
+      typeof req.body === 'string' && req.body.trim()
+        ? JSON.parse(req.body)
+        : req.body || {};
+    const { checkoutRequestId } = rawBody;
+
     if (!checkoutRequestId || typeof checkoutRequestId !== 'string') {
       return res.status(400).json({ error: 'checkoutRequestId is required.' });
     }
 
     const { adminDb } = getFirebaseAdmin();
-    const paymentSnap = await adminDb.collection('payments').doc(checkoutRequestId).get();
+    const paymentSnap = await adminDb.getDoc('payments', checkoutRequestId);
     if (!paymentSnap.exists) {
       return res.status(404).json({ error: 'Payment transaction not found.' });
     }
 
-    const payment = paymentSnap.data();
+    const payment = paymentSnap.data;
     const isAdmin = (decodedUser.email || '').toLowerCase() === ADMIN_EMAIL;
     if (payment.uid !== decodedUser.uid && !isAdmin) {
       return res.status(403).json({ error: 'Access denied.' });
@@ -86,4 +91,3 @@ export default async function handler(req, res) {
     });
   }
 }
-
