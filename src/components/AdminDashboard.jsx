@@ -11,10 +11,12 @@ import {
   Lock,
   Unlock,
   Clock,
-  Wallet
+  Wallet,
+  Receipt
 } from 'lucide-react';
 import {
   fetchAllUsers,
+  fetchRecentPayments,
   grant90DayPass,
   revoke90DayPass,
   grantChallengeUnlock,
@@ -46,6 +48,7 @@ export default function AdminDashboard({
   onClose
 }) {
   const [usersList, setUsersList] = useState([]);
+  const [paymentsList, setPaymentsList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -69,8 +72,20 @@ export default function AdminDashboard({
     setLoading(true);
     setError('');
     try {
-      const list = await fetchAllUsers(user);
-      setUsersList(list);
+      const [usersRes, paymentsRes] = await Promise.allSettled([
+        fetchAllUsers(user),
+        fetchRecentPayments(user, 50)
+      ]);
+      if (usersRes.status === 'fulfilled') {
+        setUsersList(usersRes.value);
+      } else {
+        throw usersRes.reason;
+      }
+      if (paymentsRes.status === 'fulfilled') {
+        setPaymentsList(paymentsRes.value);
+      } else {
+        console.warn('Could not load recent M-Pesa transactions:', paymentsRes.reason);
+      }
     } catch (err) {
       console.error('Admin fetch users failed:', err);
       setError(
@@ -97,15 +112,25 @@ export default function AdminDashboard({
       0
     );
     const paidCustom = customChallenges.filter((c) => Number(c.price) > 0).length;
+    const completedPayments = paymentsList.filter((p) => p.status === 'COMPLETED');
+    const liveRevenueKes = completedPayments
+      .filter((p) => p.environment === 'production')
+      .reduce((sum, p) => sum + (Number(p.paidAmount ?? p.amount) || 0), 0);
+    const sandboxRevenueKes = completedPayments
+      .filter((p) => p.environment !== 'production')
+      .reduce((sum, p) => sum + (Number(p.paidAmount ?? p.amount) || 0), 0);
     return {
       totalUsers: usersList.length,
       active24h,
       active7d,
       activePasses,
       totalPassesEarned,
-      paidCustom
+      paidCustom,
+      completedTxCount: completedPayments.length,
+      liveRevenueKes,
+      sandboxRevenueKes
     };
-  }, [usersList, customChallenges]);
+  }, [usersList, customChallenges, paymentsList]);
 
   const filteredUsers = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -185,7 +210,7 @@ export default function AdminDashboard({
             <h2 className="text-sm sm:text-base font-black text-white flex items-center gap-2">
               ADMIN USER &amp; ACCESS DASHBOARD
               <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
-                Phase 1 Live
+                M-Pesa Daraja Ready
               </span>
             </h2>
             <p className="text-xs text-slate-400">
@@ -274,7 +299,7 @@ export default function AdminDashboard({
               90-Day Unlock-All Pass Price (3 Months Full Driving School Term)
             </div>
             <div className="text-[11px] text-slate-400">
-              Unlocks all paid custom challenges for {PASS_DURATION_DAYS} days once Daraja M-Pesa is wired in Phase 2.
+              Unlocks all paid custom challenges for {PASS_DURATION_DAYS} days via automatic Daraja M-Pesa STK Push checkout.
             </div>
           </div>
         </div>
@@ -481,6 +506,101 @@ export default function AdminDashboard({
         </div>
       </div>
 
+      {/* Recent M-Pesa Transactions */}
+      <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3 flex flex-col gap-2.5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+            <Receipt className="w-3.5 h-3.5" />
+            Recent M-Pesa STK Push Transactions ({paymentsList.length})
+          </div>
+          <div className="flex items-center gap-3 text-[11px]">
+            <span className="text-slate-300 font-semibold">
+              Live Revenue:{' '}
+              <strong className="text-emerald-300">
+                KES {stats.liveRevenueKes.toLocaleString()}
+              </strong>
+            </span>
+            {stats.sandboxRevenueKes > 0 && (
+              <span className="text-slate-400 font-semibold">
+                Sandbox Tests:{' '}
+                <strong className="text-amber-300">
+                  KES {stats.sandboxRevenueKes.toLocaleString()}
+                </strong>
+              </span>
+            )}
+          </div>
+        </div>
+
+        {paymentsList.length === 0 ? (
+          <div className="text-xs text-slate-500 py-3 text-center">
+            No M-Pesa STK Push transactions recorded yet. Test or live checkouts will appear here automatically.
+          </div>
+        ) : (
+          <div className="overflow-x-auto max-h-56">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead className="text-[10px] uppercase text-slate-400 border-b border-slate-800">
+                <tr>
+                  <th className="py-1.5 px-2">Learner</th>
+                  <th className="py-1.5 px-2">Plan</th>
+                  <th className="py-1.5 px-2">Amount</th>
+                  <th className="py-1.5 px-2">Receipt</th>
+                  <th className="py-1.5 px-2">Status</th>
+                  <th className="py-1.5 px-2 text-right">Time</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/70">
+                {paymentsList.map((tx) => {
+                  const statusColor =
+                    tx.status === 'COMPLETED'
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                      : tx.status === 'PENDING'
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                      : 'bg-rose-500/20 text-rose-300 border-rose-500/40';
+                  return (
+                    <tr key={tx.id} className="hover:bg-slate-900/50">
+                      <td className="py-1.5 px-2">
+                        <div className="font-bold text-slate-200 truncate max-w-[160px]">
+                          {tx.userEmail || tx.userName || tx.uid}
+                        </div>
+                        <div className="text-[10px] text-slate-500">
+                          {tx.phoneNumber}
+                        </div>
+                      </td>
+                      <td className="py-1.5 px-2 text-slate-300 truncate max-w-[150px]">
+                        {tx.plan === 'pass90'
+                          ? '90-Day Pass'
+                          : tx.challengeTitle || 'Single Challenge'}
+                      </td>
+                      <td className="py-1.5 px-2 font-bold text-white whitespace-nowrap">
+                        KES {tx.paidAmount ?? tx.amount}
+                      </td>
+                      <td className="py-1.5 px-2 font-mono text-[11px] text-slate-300 whitespace-nowrap">
+                        {tx.mpesaReceiptNumber || '—'}
+                      </td>
+                      <td className="py-1.5 px-2 whitespace-nowrap">
+                        <span
+                          className={`px-1.5 py-0.5 rounded border text-[9px] font-black uppercase ${statusColor}`}
+                        >
+                          {tx.status}
+                        </span>
+                        {tx.environment !== 'production' && (
+                          <span className="ml-1 px-1 py-0.5 rounded bg-slate-800 text-amber-300 text-[9px] font-bold">
+                            SANDBOX
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-1.5 px-2 text-right text-slate-400 whitespace-nowrap">
+                        {formatRelativeTime(tx.createdAt)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
       {/* Custom Challenge Unlock Metrics */}
       {customChallenges.length > 0 && (
         <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3">
@@ -526,3 +646,4 @@ export default function AdminDashboard({
     </div>
   );
 }
+

@@ -2,22 +2,15 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
-// Helper to read env variables with or without VITE_ prefix (supports Vercel, Netlify, and local .env)
-const getEnv = (key) => {
-  return (
-    import.meta.env?.[`VITE_${key}`] ||
-    import.meta.env?.[key] ||
-    ''
-  );
-};
-
+// Explicit static property reads so Vite `define` works reliably while never
+// exposing broad server env prefixes (like FIREBASE_SERVICE_ACCOUNT_JSON) to client bundles.
 const firebaseConfig = {
-  apiKey: getEnv('FIREBASE_API_KEY'),
-  authDomain: getEnv('FIREBASE_AUTH_DOMAIN'),
-  projectId: getEnv('FIREBASE_PROJECT_ID'),
-  storageBucket: getEnv('FIREBASE_STORAGE_BUCKET'),
-  messagingSenderId: getEnv('FIREBASE_MESSAGING_SENDER_ID'),
-  appId: getEnv('FIREBASE_APP_ID')
+  apiKey: import.meta.env?.VITE_FIREBASE_API_KEY || import.meta.env?.FIREBASE_API_KEY || '',
+  authDomain: import.meta.env?.VITE_FIREBASE_AUTH_DOMAIN || import.meta.env?.FIREBASE_AUTH_DOMAIN || '',
+  projectId: import.meta.env?.VITE_FIREBASE_PROJECT_ID || import.meta.env?.FIREBASE_PROJECT_ID || '',
+  storageBucket: import.meta.env?.VITE_FIREBASE_STORAGE_BUCKET || import.meta.env?.FIREBASE_STORAGE_BUCKET || '',
+  messagingSenderId: import.meta.env?.VITE_FIREBASE_MESSAGING_SENDER_ID || import.meta.env?.FIREBASE_MESSAGING_SENDER_ID || '',
+  appId: import.meta.env?.VITE_FIREBASE_APP_ID || import.meta.env?.FIREBASE_APP_ID || ''
 };
 
 // Check if Firebase keys are provided in .env or Vercel
@@ -47,4 +40,4 @@ if (isFirebaseConfigured) {
 }
 
 export { app, auth, googleProvider, db };
-export const ADMIN_EMAIL = getEnv('ADMIN_EMAIL');
+export const ADMIN_EMAIL = import.meta.env?.VITE_ADMIN_EMAIL || import.meta.env?.ADMIN_EMAIL || '';

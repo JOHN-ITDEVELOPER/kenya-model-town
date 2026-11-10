@@ -8,17 +8,19 @@ import {
   onSnapshot,
   query,
   orderBy,
+  limit,
   serverTimestamp,
   arrayUnion,
   arrayRemove,
   increment,
   Timestamp
 } from 'firebase/firestore';
-import { db, isFirebaseConfigured } from './firebase.js';
+import { auth, db, isFirebaseConfigured } from './firebase.js';
 import { isUserAdmin } from './challengeService.js';
 
 const USERS_COLLECTION = 'users';
 const SETTINGS_COLLECTION = 'settings';
+const PAYMENTS_COLLECTION = 'payments';
 const MONETIZATION_DOC = 'monetization';
 
 export const DEFAULT_PASS_PRICE_KES = 300;
@@ -266,4 +268,88 @@ export const revoke90DayPass = async (adminUser, targetUid) => {
   await updateDoc(doc(db, USERS_COLLECTION, targetUid), {
     passExpiresAt: null
   });
+};
+
+async function postAuthorizedMpesaApi(endpoint, body) {
+  if (!auth?.currentUser) {
+    throw new Error('Please sign in with Google before paying via M-Pesa.');
+  }
+  const idToken = await auth.currentUser.getIdToken();
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${idToken}`
+    },
+    body: JSON.stringify(body)
+  });
+
+  const text = await response.text();
+  let data = {};
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error(
+      `M-Pesa API (${endpoint}) returned non-JSON response (HTTP ${response.status}). Ensure backend API routes and env variables are running.`
+    );
+  }
+
+  if (!response.ok) {
+    throw new Error(data.error || `Request failed (HTTP ${response.status}).`);
+  }
+
+  return data;
+}
+
+/**
+ * Trigger a Daraja M-Pesa STK Push for either a single challenge or a 90-day pass.
+ */
+export const initiateMpesaStkPush = async ({ plan, challengeId, phoneNumber }) =>
+  postAuthorizedMpesaApi('/api/mpesa/stkpush', {
+    plan,
+    challengeId: challengeId || null,
+    phoneNumber
+  });
+
+/**
+ * Ask the backend to query Daraja directly if webhook callback is delayed.
+ */
+export const queryMpesaPaymentStatus = async (checkoutRequestId) =>
+  postAuthorizedMpesaApi('/api/mpesa/query', { checkoutRequestId });
+
+/**
+ * Listen in real time to a payment document for instant unlock feedback.
+ */
+export const subscribeToPaymentStatus = (checkoutRequestId, onUpdate, onError) => {
+  if (!isFirebaseConfigured || !db || !checkoutRequestId) {
+    return () => {};
+  }
+  const ref = doc(db, PAYMENTS_COLLECTION, checkoutRequestId);
+  return onSnapshot(
+    ref,
+    (snap) => {
+      onUpdate(snap.exists() ? { id: snap.id, ...snap.data() } : null);
+    },
+    (err) => {
+      console.warn('Payment listener warning:', err);
+      if (onError) onError(err);
+    }
+  );
+};
+
+/**
+ * Fetch recent M-Pesa payment transactions (Admin Dashboard only).
+ */
+export const fetchRecentPayments = async (adminUser, maxCount = 50) => {
+  if (!isUserAdmin(adminUser)) {
+    throw new Error('Access Denied: Admin privileges required.');
+  }
+  if (!isFirebaseConfigured || !db) return [];
+  const q = query(
+    collection(db, PAYMENTS_COLLECTION),
+    orderBy('createdAt', 'desc'),
+    limit(maxCount)
+  );
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
 };

@@ -44,5 +44,17 @@ service cloud.firestore {
 
       allow delete: if isAdmin();
     }
+
+    // M-Pesa Payment Records (read by owner or admin; written exclusively by server Admin SDK)
+    match /payments/{paymentId} {
+      allow read: if isAdmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
+      allow write: if false;
+    }
+
+    // Internal Daraja Verification Nonces & MerchantRequestIDs (strictly server-only)
+    match /mpesa_internal/{paymentId} {
+      allow read, write: if false;
+    }
   }
 }
+
