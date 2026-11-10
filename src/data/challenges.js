@@ -47,7 +47,7 @@ export const CHALLENGES = [
     carColor: '#ef4444',
     carLabel: 'RED CAR',
     vehicleType: 'saloon',
-    startNode: 'MN_N_L1_TOP',
+    startNode: 'MN_N_L1_EXIT',
     targetNode: 'SIDE_S_BOT',
     blockedNodes: ['TOP_W_FLUSH_APPROACH', 'RA_NE_L4'],
     allowParkingShortcut: true,
@@ -59,7 +59,7 @@ export const CHALLENGES = [
       'Examiner Question (Famous YouTube Exam Trick): "Move the RED CAR from Minor Road North (Lane 1) to stop behind the YELLOW CAR on the Side Access Road. Both the Top Perimeter Westbound road AND Roundabout Ring 4 are CLOSED!"',
     hint: 'Normally driving through Controlled Angle Parking without parking is an instant fail. However, because BOTH road routes (Top Westbound Road and Roundabout Ring 4) are closed, NTSA Rule 3 allows using Controlled Angle Parking as your last resort!',
     solutionPath: [
-      'MN_N_L1_TOP',
+      'MN_N_L1_EXIT',
       'AP_EXIT_E',
       'AP_AISLE_E',
       'AP_AISLE_W',

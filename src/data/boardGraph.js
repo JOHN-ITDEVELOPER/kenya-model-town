@@ -1228,13 +1228,23 @@ export const buildBoardEdges = () => {
   addEdge('SIDE_S_BOT', 'MW_E_L2_SHIFT', { turn: 'left' });
   addEdge('SIDE_S_BOT', 'MW_E_L1_ENTRY', { turn: 'left' });
 
-  // Controlled Angle Parking Zone Entrance & Exit
+  // Controlled Angle Parking Zone Entrance & Exit (strictly forward flow — never reverse/wrong-way on road lanes)
   addEdge('SIDE_N_MID', 'AP_ENTRY', { turn: 'right' });
   addEdge('SIDE_N_LOWER', 'AP_ENTRY', { turn: 'right' });
-  addEdge('SIDE_S_MID', 'AP_ENTRY', { turn: 'left' });
-  addEdge('SIDE_S_LOWER', 'AP_ENTRY', { turn: 'left' });
+  addEdge('SIDE_S_UPPER', 'AP_ENTRY', { turn: 'left' });
+  addEdge('SIDE_S_MID', 'AP_ENTRY', {
+    isLegal: false,
+    violationReason: 'Wrong-Way Violation: You drove backwards (North) on the Side Access Road Southbound lane after already passing the Controlled Parking entrance!'
+  });
+  addEdge('SIDE_S_LOWER', 'AP_ENTRY', {
+    isLegal: false,
+    violationReason: 'Wrong-Way Violation: You drove backwards (North) on the Side Access Road Southbound lane after already passing the Controlled Parking entrance!'
+  });
   addEdge('MN_N_L1_EXIT', 'AP_EXIT_E', { turn: 'left' });
-  addEdge('MN_N_L1_TOP', 'AP_EXIT_E', { turn: 'left' });
+  addEdge('MN_N_L1_TOP', 'AP_EXIT_E', {
+    isLegal: false,
+    violationReason: 'Wrong-Way Violation: You drove backwards (South) down one-way Minor Road Northbound Lane 1 against oncoming traffic! You had already passed the Controlled Parking junction.'
+  });
   addEdge('AP_EXIT_E', 'AP_AISLE_E');
   addEdge('AP_EXIT_E', 'AP_AISLE_7');
   addEdge('AP_EXIT_E', 'MN_N_L1_TOP', { turn: 'left' });
@@ -1246,8 +1256,11 @@ export const buildBoardEdges = () => {
   addEdge('AP_AISLE_W', 'AP_ENTRY');
   addEdge('AP_ENTRY', 'SIDE_S_MID', { turn: 'left' });
   addEdge('AP_ENTRY', 'SIDE_S_LOWER', { turn: 'left' });
-  addEdge('AP_ENTRY', 'SIDE_N_MID', { turn: 'right' });
-  addEdge('AP_ENTRY', 'SIDE_N_LOWER', { turn: 'right' });
+  addEdge('AP_ENTRY', 'SIDE_N_UPPER', { turn: 'right' });
+  addEdge('AP_ENTRY', 'SIDE_N_LOWER', {
+    isLegal: false,
+    violationReason: 'Wrong-Way Violation (Failed to Keep Left): Exiting Controlled Parking Southbound into the Northbound Side Access Road lane is against oncoming traffic!'
+  });
 
   addEdge('AP_AISLE_1', 'AP_AISLE_W');
   addEdge('AP_AISLE_W', 'AP_AISLE_1');
