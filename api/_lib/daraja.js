@@ -177,6 +177,13 @@ export async function getDarajaAccessToken(cfg) {
   return data.access_token;
 }
 
+function formatDarajaErrorMessage(data, fallback, envName) {
+  if (data?.errorCode === '404.001.03') {
+    return `Daraja 404.001.03 ("Invalid Access Token") on ${envName}: Your app OAuth key works, but "Lipa Na M-Pesa Sandbox" (M-Pesa Express / STK Push) is not enabled under Products for this App on developer.safaricom.co.ke (or DARAJA_ENV mismatches your keys).`;
+  }
+  return data?.errorMessage || data?.ResponseDescription || fallback;
+}
+
 export async function initiateStkPush({
   cfg,
   phoneNumber,
@@ -222,9 +229,11 @@ export async function initiateStkPush({
 
   if (!response.ok || data.ResponseCode !== '0') {
     const err = new Error(
-      data.errorMessage ||
-        data.ResponseDescription ||
-        `Daraja STK Push failed (HTTP ${response.status}).`
+      formatDarajaErrorMessage(
+        data,
+        `Daraja STK Push failed (HTTP ${response.status}).`,
+        cfg.env
+      )
     );
     err.statusCode = response.status >= 400 ? response.status : 502;
     throw err;
@@ -270,8 +279,11 @@ export async function queryStkPushStatus({ cfg, checkoutRequestId }) {
 
   if (!response.ok && data.ResultCode === undefined) {
     const err = new Error(
-      data.errorMessage ||
-        `Daraja status query failed (HTTP ${response.status}).`
+      formatDarajaErrorMessage(
+        data,
+        `Daraja status query failed (HTTP ${response.status}).`,
+        cfg.env
+      )
     );
     err.statusCode = response.status >= 400 ? response.status : 502;
     throw err;
