@@ -286,13 +286,31 @@ export default function App() {
     return (Math.atan2(next.y - curr.y, next.x - curr.x) * 180) / Math.PI + 90;
   }, []);
 
+  // Verify any pre-saved solution still matches start/target/barriers & current NTSA rules
+  const isSavedSolutionValid = useMemo(() => {
+    if (
+      mode !== 'challenges' ||
+      !Array.isArray(currentChallenge?.solutionPath) ||
+      currentChallenge.solutionPath.length < 2 ||
+      (currentChallenge.blockedNodes?.length || 0) !== blockedNodes.length ||
+      currentChallenge.solutionPath[0] !== startNodeId ||
+      currentChallenge.solutionPath[currentChallenge.solutionPath.length - 1] !== targetNodeId
+    ) {
+      return false;
+    }
+    return validateNtsaRoute(
+      currentChallenge.solutionPath,
+      targetNodeId,
+      blockedNodes,
+      vehicleType,
+      Boolean(currentChallenge.allowParkingShortcut),
+      currentChallenge.requiredWaypoints || []
+    ).isValid;
+  }, [mode, currentChallenge, startNodeId, targetNodeId, blockedNodes, vehicleType]);
+
   // Compute Official Solution Path for active challenge or custom sandbox setup
   const officialSolutionPath = useMemo(() => {
-    if (
-      mode === 'challenges' &&
-      currentChallenge.solutionPath &&
-      currentChallenge.blockedNodes.length === blockedNodes.length
-    ) {
+    if (isSavedSolutionValid) {
       return currentChallenge.solutionPath;
     }
     return (
@@ -305,14 +323,14 @@ export default function App() {
         mode === 'challenges' ? currentChallenge.requiredWaypoints : []
       ) || []
     );
-  }, [mode, currentChallenge, startNodeId, targetNodeId, blockedNodes, vehicleType]);
+  }, [isSavedSolutionValid, mode, currentChallenge, startNodeId, targetNodeId, blockedNodes, vehicleType]);
 
   // Generate human-readable step-by-step commentary for any solution path
   const solutionCommentarySteps = useMemo(() => {
     if (
-      mode === 'challenges' &&
-      currentChallenge.solutionSteps &&
-      currentChallenge.blockedNodes.length === blockedNodes.length
+      isSavedSolutionValid &&
+      Array.isArray(currentChallenge.solutionSteps) &&
+      currentChallenge.solutionSteps.length > 0
     ) {
       return currentChallenge.solutionSteps;
     }
@@ -436,18 +454,20 @@ export default function App() {
     // If Admin Builder mode is active, handle builder placement tools
     if (showAdminBuilder) {
       if (builderTool === 'start') {
-        setBuilderState((prev) => ({ ...prev, startNode: nodeId }));
+        setBuilderState((prev) => ({ ...prev, startNode: nodeId, solutionPath: [], solutionSteps: [] }));
         setPlottedPath([nodeId]);
         playClick(720);
       } else if (builderTool === 'target') {
-        setBuilderState((prev) => ({ ...prev, targetNode: nodeId }));
+        setBuilderState((prev) => ({ ...prev, targetNode: nodeId, solutionPath: [], solutionSteps: [] }));
         playClick(840);
       } else if (builderTool === 'barrier') {
         setBuilderState((prev) => ({
           ...prev,
           blockedNodes: prev.blockedNodes.includes(nodeId)
             ? prev.blockedNodes.filter((id) => id !== nodeId)
-            : [...prev.blockedNodes, nodeId]
+            : [...prev.blockedNodes, nodeId],
+          solutionPath: [],
+          solutionSteps: []
         }));
         playClick(500);
       } else if (builderTool === 'obstacle') {

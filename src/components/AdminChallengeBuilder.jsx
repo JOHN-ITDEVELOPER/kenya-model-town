@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   Save,
   RotateCcw,
@@ -16,8 +16,16 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { BOARD_NODES } from '../data/boardGraph';
-import { findShortestValidNtsaRoute } from '../engine/bfsSolver';
+import { findShortestValidNtsaRoute, validateNtsaRoute } from '../engine/bfsSolver';
 import { saveCustomChallenge, deleteCustomChallenge } from '../services/challengeService';
+
+const buildSolutionSteps = (path) =>
+  path.map((nid, idx) => {
+    const node = BOARD_NODES[nid];
+    if (idx === 0) return `Start on ${node?.road || 'road'} (${node?.label || nid}).`;
+    if (idx === path.length - 1) return `Arrive and safely park at target: ${node?.label || nid}.`;
+    return `Proceed through ${node?.label || nid} (${node?.road || 'lane'}).`;
+  });
 
 const CAR_COLORS = [
   { label: 'Blue', value: '#3b82f6' },
@@ -52,7 +60,14 @@ export default function AdminChallengeBuilder({
   // BFS Verification Result
   const [verificationResult, setVerificationResult] = useState(null);
 
-  // Run BFS to verify the challenge is legally solvable
+  // Clear verification banner whenever puzzle geometry resets solutionPath
+  useEffect(() => {
+    if (!builderState.solutionPath || builderState.solutionPath.length === 0) {
+      setVerificationResult(null);
+    }
+  }, [builderState.solutionPath]);
+
+  // Run solver to verify the challenge is legally solvable
   const handleVerifyRoute = useCallback(() => {
     setErrorMessage('');
     if (!builderState.startNode || !builderState.targetNode) {
@@ -70,13 +85,7 @@ export default function AdminChallengeBuilder({
     );
 
     if (path && path.length > 0) {
-      // Auto-generate step-by-step commentary
-      const steps = path.map((nid, idx) => {
-        const node = BOARD_NODES[nid];
-        if (idx === 0) return `Start on ${node?.road || 'road'} (${node?.label || nid}).`;
-        if (idx === path.length - 1) return `Arrive and safely park at target: ${node?.label || nid}.`;
-        return `Proceed through ${node?.label || nid} (${node?.road || 'lane'}).`;
-      });
+      const steps = buildSolutionSteps(path);
 
       setVerificationResult({
         isValid: true,
@@ -85,7 +94,6 @@ export default function AdminChallengeBuilder({
         message: `Verified! Legal route found in ${path.length} steps.`
       });
 
-      // Populate solution into state
       setBuilderState((prev) => ({
         ...prev,
         solutionPath: path,
@@ -115,10 +123,24 @@ export default function AdminChallengeBuilder({
       return;
     }
 
-    // Auto-verify if not done yet
+    // Revalidate saved solution against current configuration or compute fresh
     let path = builderState.solutionPath;
     let steps = builderState.solutionSteps;
-    if (!path || path.length === 0) {
+    const isCachedPathStillValid =
+      Array.isArray(path) &&
+      path.length >= 2 &&
+      path[0] === builderState.startNode &&
+      path[path.length - 1] === builderState.targetNode &&
+      validateNtsaRoute(
+        path,
+        builderState.targetNode,
+        builderState.blockedNodes || [],
+        builderState.vehicleType || 'saloon',
+        Boolean(builderState.allowParkingShortcut),
+        builderState.requiredWaypoints || []
+      ).isValid;
+
+    if (!isCachedPathStillValid) {
       path = findShortestValidNtsaRoute(
         builderState.startNode,
         builderState.targetNode,
@@ -131,12 +153,7 @@ export default function AdminChallengeBuilder({
         setErrorMessage('Cannot publish challenge: No legal NTSA route found. Please adjust roadblocks.');
         return;
       }
-      steps = path.map((nid, idx) => {
-        const node = BOARD_NODES[nid];
-        if (idx === 0) return `Start at ${node?.label || nid}.`;
-        if (idx === path.length - 1) return `Arrive at target: ${node?.label || nid}.`;
-        return `Pass through ${node?.label || nid}.`;
-      });
+      steps = buildSolutionSteps(path);
     }
 
     setSaving(true);
@@ -458,7 +475,9 @@ export default function AdminChallengeBuilder({
                           onClick={() => {
                             setBuilderState((prev) => ({
                               ...prev,
-                              blockedNodes: prev.blockedNodes.filter((id) => id !== bid)
+                              blockedNodes: prev.blockedNodes.filter((id) => id !== bid),
+                              solutionPath: [],
+                              solutionSteps: []
                             }));
                           }}
                           className="hover:text-white"
@@ -614,7 +633,12 @@ export default function AdminChallengeBuilder({
                   <select
                     value={builderState.vehicleType || 'saloon'}
                     onChange={(e) =>
-                      setBuilderState((prev) => ({ ...prev, vehicleType: e.target.value }))
+                      setBuilderState((prev) => ({
+                        ...prev,
+                        vehicleType: e.target.value,
+                        solutionPath: [],
+                        solutionSteps: []
+                      }))
                     }
                     className="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white"
                   >
@@ -630,7 +654,9 @@ export default function AdminChallengeBuilder({
                     onChange={(e) =>
                       setBuilderState((prev) => ({
                         ...prev,
-                        allowParkingShortcut: e.target.checked
+                        allowParkingShortcut: e.target.checked,
+                        solutionPath: [],
+                        solutionSteps: []
                       }))
                     }
                     className="rounded border-slate-700 text-emerald-600 focus:ring-0"

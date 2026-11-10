@@ -1,5 +1,100 @@
 import { NODES, BOARD_NODES, EDGES, ALL_EDGES } from '../data/boardGraph.js';
 
+const TURN_LABELS = {
+  1: '90° Left Turn (1st Exit)',
+  2: '0° Straight Ahead (2nd Exit)',
+  3: '90° Right Turn (3rd Exit)',
+  4: '180° U-Turn (4th Exit)',
+  5: '270° Q-Turn (5th Exit)',
+  6: '360° Full Roundabout O-Turn (6th Exit)'
+};
+
+/**
+ * Evaluate NTSA roundabout lane & exit discipline for a single roundabout traversal.
+ * Shared between strict validation and incremental solver pruning.
+ */
+function evaluateRoundaboutTurn(entryNode, raSegment, exitNode) {
+  if (!entryNode || !exitNode || raSegment.length === 0) {
+    return { violation: null, passed: null };
+  }
+
+  const quadCount = raSegment.length;
+  const turnDesc = TURN_LABELS[quadCount] || `${quadCount} quadrants`;
+  const isMajor = entryNode.approach === 'MW' || entryNode.approach === 'ME';
+  const isMinor = entryNode.approach === 'MS' || entryNode.approach === 'MN';
+  const lane = entryNode.lane;
+  const ringUsed = raSegment[0].ring;
+
+  if (isMajor) {
+    if (lane === 1 && ![1, 2].includes(quadCount)) {
+      return {
+        violation: `NTSA Major Road Lane 1 Violation: You executed a ${turnDesc} from Lane 1. Major Road Lane 1 ONLY allows 90° Left (1st exit) or 0° Straight (2nd exit).`,
+        passed: null
+      };
+    }
+    if (lane === 2 && quadCount !== 2) {
+      return {
+        violation: `NTSA Major Road Lane 2 Violation: You executed a ${turnDesc} from Lane 2. Major Road Lane 2 is strictly for going 0° Straight Ahead (2nd exit) ONLY!`,
+        passed: null
+      };
+    }
+    if (lane === 3 && ![2, 3].includes(quadCount)) {
+      return {
+        violation: `NTSA Major Road Lane 3 Violation: You executed a ${turnDesc} from Lane 3. Major Road Lane 3 ONLY allows 0° Straight (2nd exit) or 90° Right (3rd exit).`,
+        passed: null
+      };
+    }
+    if (lane === 4 && ![3, 4, 5, 6].includes(quadCount)) {
+      return {
+        violation: `NTSA Major Road Lane 4 Violation: You executed a ${turnDesc} from Innermost Lane 4. Major Road Lane 4 has 4 options via Ring 4: 90° Right, 180° U-Turn, 270° Q-Turn, or 360° O-Turn.`,
+        passed: null
+      };
+    }
+    return {
+      violation: null,
+      passed: `Correct Major Road Lane ${lane} maneuver: Executed legal ${turnDesc} via Roundabout Ring ${ringUsed}.`
+    };
+  }
+
+  if (isMinor) {
+    if (lane === 1 && ![1, 2].includes(quadCount)) {
+      return {
+        violation: `NTSA Minor Road Lane 1 Violation: You executed a ${turnDesc} from Minor Lane 1. Minor Road Lane 1 ONLY allows 90° Left or 0° Straight.`,
+        passed: null
+      };
+    }
+    if (lane === 2 && quadCount !== 2) {
+      return {
+        violation: `NTSA Minor Road Lane 2 Violation: You executed a ${turnDesc} from Minor Lane 2. Minor Road Lane 2 is strictly for 0° Straight ONLY!`,
+        passed: null
+      };
+    }
+    if (lane === 3) {
+      // Minor Road Lane 3 has 5 options:
+      // - Via Ring 3: 0° Straight (2 quads) or 90° Right (3 quads to Major L3)
+      // - Via Ring 4: 90° Right (3 quads to Major L4), 180° U-Turn (4 quads), or 270° Q-Turn (5 quads)
+      if (ringUsed === 3 && ![2, 3].includes(quadCount)) {
+        return {
+          violation: `NTSA Minor Road Lane 3 (Ring 3) Violation: When Minor Lane 3 enters Roundabout Ring 3, it can ONLY go 0° Straight or 90° Right (into Major Lane 3). For U-turns (180°) or 270° turns, you must enter Innermost Ring 4!`,
+          passed: null
+        };
+      }
+      if (ringUsed === 4 && ![3, 4, 5, 6].includes(quadCount)) {
+        return {
+          violation: `NTSA Minor Road Lane 3 (Ring 4) Violation: When Minor Lane 3 skips Ring 3 to enter Innermost Ring 4, it cannot go straight (0°); it must turn 90° Right, 180° U-Turn, or 270° Q-Turn.`,
+          passed: null
+        };
+      }
+      return {
+        violation: null,
+        passed: `Mastered Minor Road Lane 3 (5-Options Rule): Executed ${turnDesc} via Roundabout Ring ${ringUsed}!`
+      };
+    }
+  }
+
+  return { violation: null, passed: null };
+}
+
 /**
  * ============================================================================
  * STRICT NTSA TRAFFIC RULE VALIDATOR (WITH 3 GOLDEN RULES & CLOSED LANES)
@@ -86,16 +181,6 @@ export const validateNtsaRoute = (
         idx++;
       }
       const exitNode = idx < pathIds.length ? BOARD_NODES[pathIds[idx]] : null;
-      const quadCount = raSegment.length;
-      const turnLabels = {
-        1: '90° Left Turn (1st Exit)',
-        2: '0° Straight Ahead (2nd Exit)',
-        3: '90° Right Turn (3rd Exit)',
-        4: '180° U-Turn (4th Exit)',
-        5: '270° Q-Turn (5th Exit)',
-        6: '360° Full Roundabout O-Turn (6th Exit)'
-      };
-      const turnDesc = turnLabels[quadCount] || `${quadCount} quadrants`;
 
       const ringsUsed = new Set(raSegment.map((n) => n.ring));
       if (ringsUsed.size > 1) {
@@ -106,63 +191,9 @@ export const validateNtsaRoute = (
         passedRules.push(`Maintained strict lane discipline inside Roundabout Ring ${raSegment[0].ring}.`);
       }
 
-      if (entryNode && exitNode) {
-        const isMajor = entryNode.approach === 'MW' || entryNode.approach === 'ME';
-        const isMinor = entryNode.approach === 'MS' || entryNode.approach === 'MN';
-        const lane = entryNode.lane;
-        const ringUsed = raSegment[0].ring;
-
-        if (isMajor) {
-          if (lane === 1 && ![1, 2].includes(quadCount)) {
-            violations.push(
-              `NTSA Major Road Lane 1 Violation: You executed a ${turnDesc} from Lane 1. Major Road Lane 1 ONLY allows 90° Left (1st exit) or 0° Straight (2nd exit).`
-            );
-          } else if (lane === 2 && quadCount !== 2) {
-            violations.push(
-              `NTSA Major Road Lane 2 Violation: You executed a ${turnDesc} from Lane 2. Major Road Lane 2 is strictly for going 0° Straight Ahead (2nd exit) ONLY!`
-            );
-          } else if (lane === 3 && ![2, 3].includes(quadCount)) {
-            violations.push(
-              `NTSA Major Road Lane 3 Violation: You executed a ${turnDesc} from Lane 3. Major Road Lane 3 ONLY allows 0° Straight (2nd exit) or 90° Right (3rd exit).`
-            );
-          } else if (lane === 4 && ![3, 4, 5, 6].includes(quadCount)) {
-            violations.push(
-              `NTSA Major Road Lane 4 Violation: You executed a ${turnDesc} from Innermost Lane 4. Major Road Lane 4 has 4 options via Ring 4: 90° Right, 180° U-Turn, 270° Q-Turn, or 360° O-Turn.`
-            );
-          } else {
-            passedRules.push(
-              `Correct Major Road Lane ${lane} maneuver: Executed legal ${turnDesc} via Roundabout Ring ${ringUsed}.`
-            );
-          }
-        } else if (isMinor) {
-          if (lane === 1 && ![1, 2].includes(quadCount)) {
-            violations.push(
-              `NTSA Minor Road Lane 1 Violation: You executed a ${turnDesc} from Minor Lane 1. Minor Road Lane 1 ONLY allows 90° Left or 0° Straight.`
-            );
-          } else if (lane === 2 && quadCount !== 2) {
-            violations.push(
-              `NTSA Minor Road Lane 2 Violation: You executed a ${turnDesc} from Minor Lane 2. Minor Road Lane 2 is strictly for 0° Straight ONLY!`
-            );
-          } else if (lane === 3) {
-            // Minor Road Lane 3 has 5 options:
-            // - Via Ring 3: 0° Straight (2 quads) or 90° Right (3 quads to Major L3)
-            // - Via Ring 4: 90° Right (3 quads to Major L4), 180° U-Turn (4 quads), or 270° Q-Turn (5 quads)
-            if (ringUsed === 3 && ![2, 3].includes(quadCount)) {
-              violations.push(
-                `NTSA Minor Road Lane 3 (Ring 3) Violation: When Minor Lane 3 enters Roundabout Ring 3, it can ONLY go 0° Straight or 90° Right (into Major Lane 3). For U-turns (180°) or 270° turns, you must enter Innermost Ring 4!`
-              );
-            } else if (ringUsed === 4 && ![3, 4, 5, 6].includes(quadCount)) {
-              violations.push(
-                `NTSA Minor Road Lane 3 (Ring 4) Violation: When Minor Lane 3 skips Ring 3 to enter Innermost Ring 4, it cannot go straight (0°); it must turn 90° Right, 180° U-Turn, or 270° Q-Turn.`
-              );
-            } else {
-              passedRules.push(
-                `Mastered Minor Road Lane 3 (5-Options Rule): Executed ${turnDesc} via Roundabout Ring ${ringUsed}!`
-              );
-            }
-          }
-        }
-      }
+      const raEval = evaluateRoundaboutTurn(entryNode, raSegment, exitNode);
+      if (raEval.violation) violations.push(raEval.violation);
+      if (raEval.passed) passedRules.push(raEval.passed);
     } else {
       idx++;
     }
@@ -199,10 +230,20 @@ export const validateNtsaRoute = (
     }
   }
 
-  // 6. Check Flush Parking Rules
+  // 6. Check Flush Parking Rules & Illegal U-Turn Guard
+  const startInFlush = BOARD_NODES[pathIds[0]]?.zone === 'flush_parking_bay';
+  const targetInFlush =
+    BOARD_NODES[targetId]?.zone === 'flush_parking_bay' ||
+    requiredWaypoints.some((w) => BOARD_NODES[w]?.zone === 'flush_parking_bay');
   const visitedFlushBay = pathIds.some((id) => BOARD_NODES[id]?.zone === 'flush_parking_bay');
   if (visitedFlushBay) {
-    passedRules.push('Properly executed Flush Parking (Reversed into bay, drove forward to exit).');
+    if (!startInFlush && !targetInFlush && !allowParkingShortcut) {
+      violations.push(
+        'NTSA Rule 1 & Rule 3 Violation (Illegal Flush Parking U-Turn): You entered Flush Parking to cut across traffic when open road routes were available!'
+      );
+    } else {
+      passedRules.push('Properly executed Flush Parking (Reversed into bay, drove forward to exit).');
+    }
   }
 
   // 7. Check Stopping on Pedestrian Zebra Crossing
@@ -282,8 +323,10 @@ export const validateNtsaRoute = (
 
 /**
  * ============================================================================
- * BREADTH-FIRST SEARCH (BFS) AUTO-SOLVER FOR SHORTEST LEGAL NTSA ROUTE
+ * WEIGHTED DIJKSTRA AUTO-SOLVER FOR SHORTEST LEGAL NTSA ROUTE (GOLDEN RULES 1-3)
  * ============================================================================
+ * Respects Euclidean road distance, avoids unnecessary roundabout/T-junction swaps,
+ * and strictly treats Controlled Angle Parking as last resort (Rule 3).
  */
 export const findShortestValidNtsaRoute = (
   startId,
@@ -296,14 +339,43 @@ export const findShortestValidNtsaRoute = (
   if (!startId || !targetId) return null;
   if (startId === targetId) return [startId];
 
-  const queue = [{ path: [startId], r4Count: 0, wpMask: 0 }];
-  const visited = new Map();
+  const startInAngle =
+    BOARD_NODES[startId]?.zone === 'angle_parking' ||
+    BOARD_NODES[startId]?.zone === 'angle_parking_bay';
+  const targetInAngle =
+    BOARD_NODES[targetId]?.zone === 'angle_parking' ||
+    BOARD_NODES[targetId]?.zone === 'angle_parking_bay' ||
+    requiredWaypoints.some((w) => BOARD_NODES[w]?.zone === 'angle_parking_bay');
+
+  const startInFlush = BOARD_NODES[startId]?.zone === 'flush_parking_bay';
+  const targetInFlush =
+    BOARD_NODES[targetId]?.zone === 'flush_parking_bay' ||
+    requiredWaypoints.some((w) => BOARD_NODES[w]?.zone === 'flush_parking_bay');
+
+  const pq = [
+    {
+      cost: 0,
+      path: [startId],
+      r4Count: 0,
+      wpMask: 0,
+      raEntry: null,
+      raQuads: []
+    }
+  ];
+  const bestCost = new Map();
   const MAX_ITERATIONS = 35000;
   let iterations = 0;
 
-  while (queue.length > 0 && iterations < MAX_ITERATIONS) {
+  while (pq.length > 0 && iterations < MAX_ITERATIONS) {
     iterations++;
-    const { path, r4Count, wpMask } = queue.shift();
+    let minIdx = 0;
+    for (let i = 1; i < pq.length; i++) {
+      if (pq[i].cost < pq[minIdx].cost) minIdx = i;
+    }
+    const { cost, path, r4Count, wpMask, raEntry, raQuads } = pq[minIdx];
+    pq[minIdx] = pq[pq.length - 1];
+    pq.pop();
+
     const lastNodeId = path[path.length - 1];
 
     if (lastNodeId === targetId) {
@@ -321,21 +393,48 @@ export const findShortestValidNtsaRoute = (
       continue;
     }
 
-    if (path.length > 22) continue;
+    if (path.length > 26) continue;
 
     const outgoing = ALL_EDGES.filter((e) => e.from === lastNodeId && e.isLegal);
     for (const edge of outgoing) {
       const nextId = edge.to;
       if (blockedNodes.includes(nextId)) continue;
 
-      // Disallow immediate U-turn / ping-pong: A -> B -> A (unless B was a parking bay)
+      const u = BOARD_NODES[lastNodeId];
+      const v = BOARD_NODES[nextId];
+      if (!u || !v) continue;
+
+      // Enforce parking rules during expansion so Rule 3 stays truly last resort
+      if (v.zone === 'flush_parking_bay' && !startInFlush && !targetInFlush) continue;
+      if (v.zone === 'angle_parking' || v.zone === 'angle_parking_bay') {
+        if (vehicleType === 'lorry') continue;
+        if (!startInAngle && !targetInAngle && !allowParkingShortcut) continue;
+      }
+
+      // Disallow immediate ping-pong: A -> B -> A unless reversing out of a parking bay
       if (path.length >= 2 && path[path.length - 2] === nextId) {
-        const lastIsBay = BOARD_NODES[lastNodeId]?.zone?.includes('bay');
-        if (!lastIsBay) continue;
+        if (!u.zone?.includes('bay')) continue;
+      }
+
+      // Incremental roundabout lane & exit discipline check
+      let nextRaEntry = raEntry;
+      let nextRaQuads = raQuads;
+      if (u.zone !== 'roundabout' && v.zone === 'roundabout') {
+        nextRaEntry = u;
+        nextRaQuads = [v];
+      } else if (u.zone === 'roundabout' && v.zone === 'roundabout') {
+        if (u.ring !== v.ring) continue;
+        if (raQuads.length >= 6) continue;
+        nextRaQuads = [...raQuads, v];
+      } else if (u.zone === 'roundabout' && v.zone !== 'roundabout') {
+        const raCheck = evaluateRoundaboutTurn(raEntry, raQuads, v);
+        if (raCheck.violation) continue;
+        nextRaEntry = null;
+        nextRaQuads = [];
       }
 
       let newR4Count = r4Count;
-      const isRing4Edge = BOARD_NODES[lastNodeId]?.ring === 4 && BOARD_NODES[nextId]?.ring === 4;
+      const isRing4Edge = u.ring === 4 && v.ring === 4;
       if (isRing4Edge) {
         newR4Count++;
         if (newR4Count > 6) continue;
@@ -346,18 +445,29 @@ export const findShortestValidNtsaRoute = (
         if (nextId === req) newWpMask |= (1 << idx);
       });
 
+      const uIsAngle = u.zone === 'angle_parking' || u.zone === 'angle_parking_bay';
+      const vIsAngle = v.zone === 'angle_parking' || v.zone === 'angle_parking_bay';
+      const parkingPenalty = !startInAngle && !targetInAngle && !uIsAngle && vIsAngle ? 3500 : 0;
+      const edgeDist = Math.hypot(v.x - u.x, v.y - u.y) + 2;
+      const nextCost = cost + edgeDist + (edge.solverPenalty || 0) + parkingPenalty;
+
       if (nextId !== targetId) {
-        const loopTag = isRing4Edge ? Math.floor(newR4Count / 4) : 0;
-        const stateKey = `${nextId}_${newWpMask}_${loopTag}`;
-        const prevBest = visited.get(stateKey);
-        if (prevBest !== undefined && prevBest <= path.length + 1) continue;
-        visited.set(stateKey, path.length + 1);
+        const raTag = v.zone === 'roundabout'
+          ? `${raEntry?.approach || ''}${raEntry?.lane || ''}_q${nextRaQuads.length}`
+          : 'road';
+        const stateKey = `${nextId}_${newWpMask}_${raTag}`;
+        const prevBest = bestCost.get(stateKey);
+        if (prevBest !== undefined && prevBest <= nextCost) continue;
+        bestCost.set(stateKey, nextCost);
       }
 
-      queue.push({
+      pq.push({
+        cost: nextCost,
         path: [...path, nextId],
         r4Count: newR4Count,
-        wpMask: newWpMask
+        wpMask: newWpMask,
+        raEntry: nextRaEntry,
+        raQuads: nextRaQuads
       });
     }
   }

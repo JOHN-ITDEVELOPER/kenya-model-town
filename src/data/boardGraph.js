@@ -822,7 +822,8 @@ export const buildBoardEdges = () => {
       isLegal: opts.isLegal !== undefined ? opts.isLegal : true,
       violationReason: opts.violationReason || null,
       turn: opts.turn || 'none',
-      isReverse: Boolean(opts.isReverse)
+      isReverse: Boolean(opts.isReverse),
+      solverPenalty: opts.solverPenalty || 0
     });
   };
 
@@ -906,7 +907,6 @@ export const buildBoardEdges = () => {
   addEdge('MW_E_L3_MID', 'MW_E_L4_ENTRY', { turn: 'right' });
   addEdge('MW_E_L4_MID', 'MW_E_L3_ENTRY', { turn: 'left' });
   addEdge('MW_E_L2_SHIFT', 'MW_E_L3_ENTRY', { turn: 'right' });
-  addEdge('MW_E_L2_SHIFT', 'MW_E_L4_ENTRY', { turn: 'right' });
   addEdge('MW_E_L3_SHIFT', 'MW_E_L4_ENTRY', { turn: 'right' });
 
   // 3. Major Road West Westbound progressions + Broken-Line Lane Changes
@@ -972,15 +972,17 @@ export const buildBoardEdges = () => {
   addEdge('MW_W_L3_MID', 'MW_W_L2_END', { turn: 'left' });
   addEdge('MW_W_L2_MID', 'MW_W_L1_END', { turn: 'left' });
 
-  // 4. Median Gaps (Legal U-Turns from Innermost Lanes)
-  addEdge('MW_E_L4_MID', 'GAP_W1', { turn: 'right' });
-  addEdge('MW_E_L4_SHIFT', 'GAP_W1', { turn: 'right' });
-  addEdge('MW_E_L4_APP', 'GAP_W1', { turn: 'right' });
-  addEdge('GAP_W1', 'MW_W_L4_MID', { turn: 'right' });
-  addEdge('GAP_W1', 'MW_W_L4_SHIFT', { turn: 'right' });
-  addEdge('GAP_W1', 'MW_W_L4_APP', { turn: 'right' });
-  addEdge('MW_W_L4_EXIT', 'GAP_W1', { turn: 'right' });
-  addEdge('GAP_W1', 'MW_E_L4_ENTRY', { turn: 'right' });
+  // 4. Median Gaps (Legal U-Turns from Innermost Lanes; GAP_W1 & GAP_E1 are solid medians!)
+  const solidMedianViolation =
+    'Solid Median Violation: You crossed a solid green central median where no crossover gap exists! Continue to Roundabout Ring 4 or Far-West Gap W2.';
+  addEdge('MW_E_L4_MID', 'GAP_W1', { isLegal: false, violationReason: solidMedianViolation, turn: 'right' });
+  addEdge('MW_E_L4_SHIFT', 'GAP_W1', { isLegal: false, violationReason: solidMedianViolation, turn: 'right' });
+  addEdge('MW_E_L4_APP', 'GAP_W1', { isLegal: false, violationReason: solidMedianViolation, turn: 'right' });
+  addEdge('GAP_W1', 'MW_W_L4_MID', { isLegal: false, violationReason: solidMedianViolation, turn: 'right' });
+  addEdge('GAP_W1', 'MW_W_L4_SHIFT', { isLegal: false, violationReason: solidMedianViolation, turn: 'right' });
+  addEdge('GAP_W1', 'MW_W_L4_APP', { isLegal: false, violationReason: solidMedianViolation, turn: 'right' });
+  addEdge('MW_W_L4_EXIT', 'GAP_W1', { isLegal: false, violationReason: solidMedianViolation, turn: 'right' });
+  addEdge('GAP_W1', 'MW_E_L4_ENTRY', { isLegal: false, violationReason: solidMedianViolation, turn: 'right' });
 
   addEdge('MW_W_L4_END', 'GAP_W2', { turn: 'right' });
   addEdge('MW_W_L1_END', 'GAP_W2', { turn: 'right' });
@@ -989,11 +991,11 @@ export const buildBoardEdges = () => {
   addEdge('GAP_W2', 'MW_E_L2_START', { turn: 'right' });
   addEdge('GAP_W2', 'MW_E_L1_START', { turn: 'right' });
 
-  addEdge('ME_E_L4_EXIT', 'GAP_E1', { turn: 'right' });
-  addEdge('ME_E_L4_MID', 'GAP_E1', { turn: 'right' });
-  addEdge('ME_E_L4_END', 'GAP_E1', { turn: 'right' });
-  addEdge('GAP_E1', 'ME_W_L4_ENTRY', { turn: 'right' });
-  addEdge('GAP_E1', 'ME_W_L3_ENTRY', { turn: 'right' });
+  addEdge('ME_E_L4_EXIT', 'GAP_E1', { isLegal: false, violationReason: solidMedianViolation, turn: 'right' });
+  addEdge('ME_E_L4_MID', 'GAP_E1', { isLegal: false, violationReason: solidMedianViolation, turn: 'right' });
+  addEdge('ME_E_L4_END', 'GAP_E1', { isLegal: false, violationReason: solidMedianViolation, turn: 'right' });
+  addEdge('GAP_E1', 'ME_W_L4_ENTRY', { isLegal: false, violationReason: solidMedianViolation, turn: 'right' });
+  addEdge('GAP_E1', 'ME_W_L3_ENTRY', { isLegal: false, violationReason: solidMedianViolation, turn: 'right' });
 
   // Minor Road South Median Crossover Gap M1
   addEdge('MS_S_L3_EXIT', 'GAP_M1', { turn: 'right' });
@@ -1330,7 +1332,8 @@ export const buildBoardEdges = () => {
   addEdge('AP_BAY_BOT_BAY7', 'AP_AISLE_7', { isReverse: true, turn: 'left' });
 
   // 18. Top Perimeter Two-Way Road & Flush Parking Connections
-  addEdge('MN_N_L1_TOP', 'TOP_W_JCT_N', { turn: 'left' });
+  addEdge('MN_N_L1_TOP', 'TOP_W_JCT_N', { turn: 'left', solverPenalty: 6000 });
+  addEdge('MN_N_L1_TOP', 'TOP_W_FLUSH_E', { turn: 'left' });
   addEdge('MN_N_L1_TOP', 'TOP_W_FLUSH_APPROACH', { turn: 'left' });
   addEdge('MN_N_L2_TOP', 'TOP_W_FLUSH_APPROACH', { turn: 'left' });
   addEdge('MN_N_L2_TOP', 'TOP_E_JCT_N', { turn: 'right' });

@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="boardBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#166534" />
+      <stop offset="100%" stop-color="#052e16" />
+    </linearGradient>
+    <linearGradient id="asphalt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#27272a" />
+      <stop offset="100%" stop-color="#18181b" />
+    </linearGradient>
+    <clipPath id="boardClip">
+      <rect x="2" y="2" width="60" height="60" rx="14" />
+    </clipPath>
+  </defs>
+
+  <!-- Tabletop Board Background & 4-Way Roads -->
+  <g clip-path="url(#boardClip)">
+    <rect x="2" y="2" width="60" height="60" fill="url(#boardBg)" />
+    <rect x="2" y="22" width="60" height="20" fill="#1f2937" />
+    <rect x="22" y="2" width="20" height="60" fill="#1f2937" />
+
+    <!-- Road Yellow Kerb Lines -->
+    <line x1="2" y1="22" x2="62" y2="22" stroke="#facc15" stroke-width="1.5" />
+    <line x1="2" y1="42" x2="62" y2="42" stroke="#facc15" stroke-width="1.5" />
+    <line x1="22" y1="2" x2="22" y2="62" stroke="#facc15" stroke-width="1.5" />
+    <line x1="42" y1="2" x2="42" y2="62" stroke="#facc15" stroke-width="1.5" />
+  </g>
+
+  <!-- Crisp Yellow Outer Board Frame -->
+  <rect x="2" y="2" width="60" height="60" rx="14" fill="none" stroke="#facc15" stroke-width="2.4" />
+
+  <!-- Roundabout Asphalt Disc -->
+  <circle cx="32" cy="32" r="23.5" fill="url(#asphalt)" stroke="#facc15" stroke-width="2.2" />
+
+  <!-- Concentric White Dashed Roundabout Lane Marking -->
+  <circle cx="32" cy="32" r="16.5" fill="none" stroke="#f8fafc" stroke-width="1.6" stroke-dasharray="4.5 3.5" />
+
+  <!-- Central Green Island -->
+  <circle cx="32" cy="32" r="8.5" fill="#15803d" stroke="#facc15" stroke-width="2" />
+  <circle cx="32" cy="32" r="5.8" fill="none" stroke="#f8fafc" stroke-width="1.1" stroke-opacity="0.85" />
+
+  <!-- Red Toy Car Driving Clockwise at Top-Left Quadrant (r=16.5 => center ~ 20.3, 20.3) -->
+  <g transform="translate(20.5, 20.5) rotate(45)">
+    <rect x="-3.5" y="-5.8" width="7" height="11.6" rx="2.2" fill="#ef4444" stroke="#ffffff" stroke-width="0.9" />
+    <rect x="-2.4" y="-3" width="4.8" height="2.8" rx="0.9" fill="#bae6fd" />
+    <circle cx="-1.9" cy="-4.6" r="0.85" fill="#fef08a" />
+    <circle cx="1.9" cy="-4.6" r="0.85" fill="#fef08a" />
+  </g>
+</svg>
