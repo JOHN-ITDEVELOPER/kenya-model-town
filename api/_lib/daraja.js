@@ -301,3 +301,4 @@ export function extractCallbackMetadata(items = []) {
     phoneNumber: map.PhoneNumber ? String(map.PhoneNumber) : null
   };
 }
+
