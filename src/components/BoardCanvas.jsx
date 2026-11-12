@@ -25,7 +25,10 @@ export default function BoardCanvas({
   handleNodeClick,
   lastPlottedNodeId: propLastPlottedNodeId,
   isDriving = false,
-  parkedCars
+  parkedCars,
+  zoom = 1,
+  fillHeight = false,
+  compactHud = false
 }) {
   const lastPlottedNodeId = propLastPlottedNodeId !== undefined
     ? propLastPlottedNodeId
@@ -82,7 +85,7 @@ export default function BoardCanvas({
       setDragAngle(rawAngle);
     }
 
-    const SNAP_RADIUS = 36;
+    const SNAP_RADIUS = e.pointerType === 'touch' ? 44 : 36;
     let snappedId = null;
 
     // 1. Magnetically snap to any connected legal next waypoint
@@ -152,30 +155,69 @@ export default function BoardCanvas({
   const activeCarAngle = isDragging && dragAngle !== null ? dragAngle : carPose.angle;
 
 
+  const activeZoom = Math.max(1, Number(zoom) || 1);
+
   return (
-<div className="relative w-full rounded-2xl overflow-hidden border-4 border-amber-900/70 shadow-2xl bg-[#156c36]">
+<div
+      className={`relative w-full rounded-2xl overflow-hidden border-2 sm:border-4 border-amber-900/70 shadow-2xl bg-[#156c36] flex flex-col ${
+        fillHeight ? 'h-full' : ''
+      }`}
+    >
             {/* Live Instructor Commentary Banner during Solution Demo */}
             {showSolutionGuide && activeDemoStepIdx !== null && (
-              <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 bg-slate-950/95 border-2 border-amber-400 rounded-xl px-4 py-2.5 shadow-2xl max-w-xl w-[92%] flex items-center gap-3 pointer-events-none">
-                <div className="w-8 h-8 rounded-lg bg-amber-400 text-slate-950 font-black text-xs flex items-center justify-center shrink-0">
+              <div className="absolute top-2 sm:top-3 left-1/2 -translate-x-1/2 z-10 bg-slate-950/95 border-2 border-amber-400 rounded-xl px-3 sm:px-4 py-1.5 sm:py-2.5 shadow-2xl max-w-xl w-[94%] flex items-center gap-2.5 sm:gap-3 pointer-events-none">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-400 text-slate-950 font-black text-[11px] sm:text-xs flex items-center justify-center shrink-0">
                   {activeDemoStepIdx + 1}/{solutionCommentarySteps.length}
                 </div>
-                <div>
-                  <div className="text-[10px] font-extrabold uppercase tracking-wider text-amber-400">
+                <div className="min-w-0">
+                  <div className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-amber-400">
                     Instructor Live Demonstration
                   </div>
-                  <div className="text-xs font-semibold text-white">
+                  <div className="text-[11px] sm:text-xs font-semibold text-white leading-snug">
                     {solutionCommentarySteps[activeDemoStepIdx]}
                   </div>
                 </div>
               </div>
             )}
 
+            <div
+              className={`w-full ${
+                fillHeight
+                  ? activeZoom === 1
+                    ? 'flex-1 min-h-0 flex items-center justify-center overflow-hidden'
+                    : 'flex-1 min-h-0 overflow-auto overscroll-contain'
+                  : activeZoom > 1
+                  ? 'overflow-auto overscroll-contain max-h-[78dvh]'
+                  : 'overflow-hidden'
+              }`}
+              style={activeZoom > 1 ? { WebkitOverflowScrolling: 'touch' } : undefined}
+            >
+              <div
+                className={
+                  activeZoom > 1
+                    ? 'mx-auto'
+                    : fillHeight
+                    ? 'w-full h-full flex items-center justify-center'
+                    : 'w-full'
+                }
+                style={
+                  activeZoom > 1
+                    ? { width: `${Math.round(activeZoom * 100)}%`, minWidth: `${Math.round(activeZoom * 100)}%` }
+                    : undefined
+                }
+              >
             <svg
               ref={svgRef}
               viewBox="0 0 1200 820"
-              className="w-full h-auto block select-none"
-              style={{ touchAction: 'none' }}
+              preserveAspectRatio="xMidYMid meet"
+              className={
+                fillHeight && activeZoom === 1
+                  ? 'w-full h-full max-w-full max-h-full block select-none'
+                  : 'w-full h-auto block select-none'
+              }
+              style={{
+                touchAction: isDragging ? 'none' : activeZoom > 1 ? 'pan-x pan-y' : 'manipulation'
+              }}
               onPointerMove={handleCarPointerMove}
               onPointerUp={handleCarPointerUp}
               onPointerCancel={handleCarPointerUp}
@@ -929,6 +971,12 @@ export default function BoardCanvas({
                     onClick={() => handleNodeClick(node.id)}
                     className="cursor-pointer group"
                   >
+                    {/* Generous invisible finger-tap target sized cleanly within 24px lane spacing */}
+                    <circle
+                      r={isValidNext ? 14 : 11}
+                      fill="transparent"
+                    />
+
                     {/* Pulse Ring for Target or Valid Next Waypoints */}
                     {isTarget && (
                       <circle
@@ -1193,6 +1241,9 @@ export default function BoardCanvas({
                 }}
                 className="select-none"
               >
+                {/* Generous invisible thumb-grab target around car body */}
+                {!isDriving && <circle r="30" fill="transparent" />}
+
                 {/* Tactile Lift Scale Group (Isolated from translate to ensure 60fps buttery-smooth driving) */}
                 <g
                   transform={`scale(${isDragging ? 1.15 : 1})`}
@@ -1382,9 +1433,17 @@ export default function BoardCanvas({
                 </g>
               )}
             </svg>
+              </div>
+            </div>
 
-            {/* Floating Legend Badge on Bottom-Right of Board */}
-            <div className="absolute bottom-3 right-3 bg-slate-950/90 backdrop-blur-md border border-slate-700/80 rounded-xl px-3 py-2 text-[11px] text-slate-300 flex flex-wrap items-center gap-3 shadow-lg pointer-events-none">
+            {/* Floating Legend Badge on Bottom-Right of Board (below board on small screens; hidden in compact game HUD) */}
+            <div
+              className={
+                compactHud
+                  ? 'hidden'
+                  : 'md:absolute md:bottom-3 md:right-3 bg-slate-950/90 backdrop-blur-md border-t md:border border-slate-700/80 md:rounded-xl px-2.5 sm:px-3 py-1.5 sm:py-2 text-[10px] sm:text-[11px] text-slate-300 flex flex-wrap items-center justify-center md:justify-start gap-2.5 sm:gap-3 shadow-lg pointer-events-none'
+              }
+            >
               <span className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block" />
                 Next Valid Move

@@ -182,8 +182,8 @@ export default function ChallengeUnlockModal({
   if (!challenge) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-amber-500/40 rounded-2xl max-w-md w-full p-5 text-slate-100 shadow-2xl flex flex-col gap-4">
+    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+      <div className="bg-slate-900 border border-amber-500/40 rounded-2xl max-w-md w-full max-h-[92dvh] overflow-y-auto p-4 sm:p-5 text-slate-100 shadow-2xl flex flex-col gap-3.5 sm:gap-4">
         {/* Header */}
         <div className="flex items-start justify-between gap-3 border-b border-slate-800 pb-3">
           <div className="flex items-center gap-2.5">

@@ -21,7 +21,10 @@ import {
   PlusCircle,
   HelpCircle,
   Users,
-  Lock
+  Lock,
+  Maximize2,
+  Undo2,
+  ZoomIn
 } from 'lucide-react';
 import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
 import { auth, googleProvider, isFirebaseConfigured } from './services/firebase';
@@ -44,6 +47,7 @@ import InstructorPanel from './components/InstructorPanel';
 import AdminChallengeBuilder from './components/AdminChallengeBuilder';
 import AdminDashboard from './components/AdminDashboard';
 import ChallengeUnlockModal from './components/ChallengeUnlockModal';
+import MobileGameHud from './components/MobileGameHud';
 
 const useDrivingSound = (muted) => {
   const audioCtxRef = useRef(null);
@@ -177,6 +181,94 @@ export default function App() {
   });
 
   const isAdmin = useMemo(() => isUserAdmin(user), [user]);
+
+  // Mobile Responsive & Landscape Game Mode State
+  const [viewportSize, setViewportSize] = useState(() => ({
+    w: typeof window !== 'undefined' ? window.innerWidth : 1280,
+    h: typeof window !== 'undefined' ? window.innerHeight : 800
+  }));
+  const [isGameMode, setIsGameMode] = useState(false);
+  const [preferStandardInLandscape, setPreferStandardInLandscape] = useState(false);
+  const [boardZoom, setBoardZoom] = useState(1);
+  const nativeFullscreenActiveRef = useRef(false);
+
+  useEffect(() => {
+    const updateViewport = () => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      setViewportSize({ w, h });
+      if (w <= h) {
+        setPreferStandardInLandscape(false);
+      }
+    };
+    const onFullscreenChange = () => {
+      if (!document.fullscreenElement && nativeFullscreenActiveRef.current) {
+        nativeFullscreenActiveRef.current = false;
+        setIsGameMode(false);
+        try {
+          window.screen?.orientation?.unlock?.();
+        } catch {}
+      }
+    };
+    window.addEventListener('resize', updateViewport);
+    window.addEventListener('orientationchange', updateViewport);
+    document.addEventListener('fullscreenchange', onFullscreenChange);
+    return () => {
+      window.removeEventListener('resize', updateViewport);
+      window.removeEventListener('orientationchange', updateViewport);
+      document.removeEventListener('fullscreenchange', onFullscreenChange);
+    };
+  }, []);
+
+  const isLandscape = viewportSize.w > viewportSize.h;
+  const isMobileLandscape =
+    viewportSize.w < 1024 && isLandscape && viewportSize.h <= 560;
+  const showMobileGameHud =
+    (isGameMode || (isMobileLandscape && !preferStandardInLandscape)) &&
+    !showAdminBuilder &&
+    !showAdminDashboard;
+
+  const enterLandscapeGameMode = async () => {
+    setPreferStandardInLandscape(false);
+    setIsGameMode(true);
+    try {
+      const el = document.documentElement;
+      if (el?.requestFullscreen && !document.fullscreenElement) {
+        await el.requestFullscreen();
+        nativeFullscreenActiveRef.current = true;
+      }
+    } catch {
+      nativeFullscreenActiveRef.current = false;
+    }
+    try {
+      if (window.screen?.orientation?.lock) {
+        await window.screen.orientation.lock('landscape');
+      }
+    } catch {
+      // Browsers such as iOS Safari block orientation.lock; CSS Game Stage still activates cleanly
+    }
+  };
+
+  const exitGameMode = async () => {
+    setIsGameMode(false);
+    if (isMobileLandscape) {
+      setPreferStandardInLandscape(true);
+    }
+    try {
+      window.screen?.orientation?.unlock?.();
+    } catch {}
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      }
+    } catch {}
+    nativeFullscreenActiveRef.current = false;
+  };
+
+  const cycleBoardZoom = () => {
+    const levels = [1, 1.4, 1.8];
+    setBoardZoom((prev) => levels[(levels.indexOf(prev) + 1) % levels.length]);
+  };
 
   // Listen to monetization settings (90-day pass price)
   useEffect(() => {
@@ -837,6 +929,11 @@ export default function App() {
     }
   };
 
+  const handleUndoStep = () => {
+    if (isDriving || plottedPath.length <= 1) return;
+    handleNodeClick(plottedPath[plottedPath.length - 2]);
+  };
+
   // Cleanup animation frame on unmount
   useEffect(() => {
     return () => {
@@ -856,14 +953,14 @@ export default function App() {
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-base sm:text-lg font-extrabold tracking-tight text-white">
+              <h1 className="text-sm sm:text-lg font-extrabold tracking-tight text-white">
                 KENYA MODEL TOWN BOARD
               </h1>
-              <span className="text-[11px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40">
+              <span className="hidden sm:inline-block text-[11px] font-bold uppercase px-2 py-0.5 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/40">
                 NTSA Exam &amp; Closed-Lane Trainer
               </span>
             </div>
-            <p className="text-xs text-slate-400">
+            <p className="hidden sm:block text-xs text-slate-400">
               Move Car X Behind Car Y • Closed Lanes • Minor Lane 3 (5 Options) • Major Lane 4 (4 Options)
             </p>
           </div>
@@ -1058,6 +1155,17 @@ export default function App() {
 
             <div className="flex items-center gap-2 flex-wrap">
               <button
+                type="button"
+                onClick={handleUndoStep}
+                disabled={isDriving || plottedPath.length <= 1}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1.5 disabled:opacity-40 transition"
+                title="Undo last plotted waypoint"
+              >
+                <Undo2 className="w-3.5 h-3.5 text-amber-300" />
+                Undo
+              </button>
+
+              <button
                 onClick={handleResetRoute}
                 disabled={isDriving}
                 className="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1.5 disabled:opacity-50 transition"
@@ -1123,7 +1231,34 @@ export default function App() {
             />
           )}
 
+          {/* Mobile Portrait Landscape Game Mode & Zoom Strip */}
+          {!showAdminBuilder && !showAdminDashboard && (
+            <div className="lg:hidden flex items-center justify-between gap-2 bg-slate-900/90 border border-emerald-700/50 rounded-xl px-3 py-2 shadow">
+              <button
+                type="button"
+                onClick={enterLandscapeGameMode}
+                className="flex-1 py-2 px-3 rounded-lg bg-gradient-to-r from-emerald-500 to-green-600 text-slate-950 text-xs font-black flex items-center justify-center gap-2 shadow"
+              >
+                <Maximize2 className="w-4 h-4" />
+                Landscape Game Mode
+              </button>
+              <button
+                type="button"
+                onClick={cycleBoardZoom}
+                className={`py-2 px-3 rounded-lg text-xs font-extrabold border flex items-center gap-1.5 ${
+                  boardZoom > 1
+                    ? 'bg-sky-500/20 border-sky-400 text-sky-200'
+                    : 'bg-slate-800 border-slate-700 text-slate-200'
+                }`}
+              >
+                <ZoomIn className="w-4 h-4" />
+                {boardZoom}x
+              </button>
+            </div>
+          )}
+
           {/* BoardCanvas Component with Paywall Overlay if Paid Challenge is Locked */}
+          {!showMobileGameHud && (
           <div className="relative">
             <BoardCanvas
               mode={mode}
@@ -1150,6 +1285,7 @@ export default function App() {
               handleNodeClick={handleNodeClick}
               lastPlottedNodeId={lastPlottedNodeId}
               isDriving={isDriving}
+              zoom={showAdminBuilder ? 1 : boardZoom}
             />
 
             {isCurrentChallengeLocked && !showAdminBuilder && (
@@ -1193,6 +1329,7 @@ export default function App() {
               </div>
             )}
           </div>
+          )}
         </div>
 
         {/* InstructorPanel Component */}
@@ -1227,6 +1364,66 @@ export default function App() {
           inspectedNode={inspectedNode}
         />
       </div>
+
+      {showMobileGameHud && (
+        <MobileGameHud
+          isLandscape={isLandscape}
+          isManualGameMode={isGameMode}
+          onExitGameMode={exitGameMode}
+          boardZoom={boardZoom}
+          setBoardZoom={setBoardZoom}
+          mode={mode}
+          allChallenges={allChallenges}
+          activeChallengeIdx={activeChallengeIdx}
+          currentChallenge={currentChallenge}
+          loadChallenge={loadChallenge}
+          completedChallenges={completedChallenges}
+          plottedPath={plottedPath}
+          startNodeId={startNodeId}
+          targetNodeId={targetNodeId}
+          blockedNodes={blockedNodes}
+          lastPlottedNodeId={lastPlottedNodeId}
+          validNextNodeIds={validNextNodeIds}
+          isDriving={isDriving}
+          isCurrentChallengeLocked={isCurrentChallengeLocked}
+          passPriceKes={monetizationSettings.passPriceKes}
+          onOpenUnlockModal={(ch) => setUnlockModalChallenge(ch)}
+          handleNodeClick={handleNodeClick}
+          handleUndoStep={handleUndoStep}
+          handleResetRoute={handleResetRoute}
+          handleDemonstrateSolution={handleDemonstrateSolution}
+          animateCarAlongPath={animateCarAlongPath}
+          verdict={verdict}
+          setVerdict={setVerdict}
+          showWaypoints={showWaypoints}
+          setShowWaypoints={setShowWaypoints}
+          showHint={showHint}
+          setShowHint={setShowHint}
+          showSolutionGuide={showSolutionGuide}
+          setShowSolutionGuide={setShowSolutionGuide}
+          showRuleInspector={showRuleInspector}
+          setShowRuleInspector={setShowRuleInspector}
+          inspectedNode={inspectedNode}
+          inspectedNodeId={inspectedNodeId}
+          sandboxTool={sandboxTool}
+          setSandboxTool={setSandboxTool}
+          vehicleType={vehicleType}
+          setVehicleType={setVehicleType}
+          carPose={carPose}
+          carColor={carColor}
+          carLabel={carLabel}
+          setCarColor={setCarColor}
+          playClick={playClick}
+          solutionCommentarySteps={solutionCommentarySteps}
+          officialSolutionPath={officialSolutionPath}
+          activeDemoStepIdx={activeDemoStepIdx}
+          user={user}
+          userProfile={userProfile}
+          isAdmin={isAdmin}
+          showAdminBuilder={showAdminBuilder}
+          setShowAdminBuilder={setShowAdminBuilder}
+        />
+      )}
 
       {unlockModalChallenge && (
         <ChallengeUnlockModal
