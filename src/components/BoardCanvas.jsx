@@ -1,284 +1,9 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
 import { NODES, BOARD_NODES, RA_CX, RA_CY, RING_RADII, polarToCartesian } from '../data/boardGraph';
 
-export default function BoardCanvas({
-  mode = 'challenges',
-  setCarColor,
-  playClick,
-  showSolutionGuide,
-  activeDemoStepIdx,
-  solutionCommentarySteps = [],
-  officialSolutionPath = [],
-  plottedPath = [],
-  startNodeId,
-  targetNodeId,
-  blockedNodes = [],
-  showWaypoints = true,
-  validNextNodeIds = [],
-  showRuleInspector = false,
-  inspectedNodeId,
-  carPose = { x: 0, y: 0, angle: 90, turn: 'none', isReverse: false },
-  carColor = '#ef4444',
-  carLabel = 'RED CAR',
-  vehicleType = 'saloon',
-  currentChallenge = {},
-  handleNodeClick,
-  lastPlottedNodeId: propLastPlottedNodeId,
-  isDriving = false,
-  parkedCars,
-  zoom = 1,
-  fillHeight = false,
-  compactHud = false
-}) {
-  const lastPlottedNodeId = propLastPlottedNodeId !== undefined
-    ? propLastPlottedNodeId
-    : (plottedPath && plottedPath.length > 0 ? plottedPath[plottedPath.length - 1] : null);
-  // Drag-and-Drive Interaction State
-  const svgRef = useRef(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragPos, setDragPos] = useState(null);
-  const [dragAngle, setDragAngle] = useState(null);
-  const lastSnappedNodeRef = useRef(null);
-
-  // Convert Client Screen Coordinates to SVG Tabletop Coordinates
-  const getSvgCoords = useCallback((e) => {
-    if (!svgRef.current) return null;
-    const pt = svgRef.current.createSVGPoint();
-    pt.x = e.clientX;
-    pt.y = e.clientY;
-    const ctm = svgRef.current.getScreenCTM();
-    if (!ctm) return null;
-    return pt.matrixTransform(ctm.inverse());
-  }, []);
-
-  // Grab the Toy Car (Pointer Down)
-  const handleCarPointerDown = useCallback((e) => {
-    if (isDriving) return;
-    e.preventDefault();
-    e.stopPropagation();
-    try {
-      e.currentTarget.setPointerCapture(e.pointerId);
-    } catch {}
-
-    const pt = getSvgCoords(e);
-    if (pt) {
-      setDragPos({ x: pt.x, y: pt.y });
-    }
-    setIsDragging(true);
-    lastSnappedNodeRef.current = lastPlottedNodeId;
-    if (playClick) playClick(640);
-  }, [isDriving, getSvgCoords, lastPlottedNodeId, playClick]);
-
-  // Drag the Toy Car along the Road & Roundabout (Pointer Move)
-  const handleCarPointerMove = useCallback((e) => {
-    if (!isDragging) return;
-    const pt = getSvgCoords(e);
-    if (!pt) return;
-
-    setDragPos({ x: pt.x, y: pt.y });
-
-    // Rotate car body towards drag movement direction
-    const dx = pt.x - carPose.x;
-    const dy = pt.y - carPose.y;
-    if (Math.hypot(dx, dy) > 7) {
-      const rawAngle = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
-      setDragAngle(rawAngle);
-    }
-
-    const SNAP_RADIUS = e.pointerType === 'touch' ? 44 : 36;
-    let snappedId = null;
-
-    // 1. Magnetically snap to any connected legal next waypoint
-    for (const nextId of validNextNodeIds) {
-      if (blockedNodes.includes(nextId)) continue;
-      const node = BOARD_NODES[nextId];
-      if (!node) continue;
-      const dist = Math.hypot(node.x - pt.x, node.y - pt.y);
-      if (dist <= SNAP_RADIUS) {
-        snappedId = nextId;
-        break;
-      }
-    }
-
-    if (snappedId && snappedId !== lastSnappedNodeRef.current) {
-      lastSnappedNodeRef.current = snappedId;
-      handleNodeClick(snappedId);
-      return;
-    }
-
-    // 2. Drag backwards to undo the previous step smoothly
-    if (plottedPath.length >= 2) {
-      const prevId = plottedPath[plottedPath.length - 2];
-      const prevNode = BOARD_NODES[prevId];
-      if (prevNode) {
-        const dist = Math.hypot(prevNode.x - pt.x, prevNode.y - pt.y);
-        if (dist <= SNAP_RADIUS && prevId !== lastSnappedNodeRef.current) {
-          lastSnappedNodeRef.current = prevId;
-          handleNodeClick(prevId);
-          return;
-        }
-      }
-    }
-  }, [isDragging, getSvgCoords, carPose, validNextNodeIds, blockedNodes, plottedPath, handleNodeClick]);
-
-  // Release the Toy Car (Pointer Up)
-  const handleCarPointerUp = useCallback((e) => {
-    if (!isDragging) return;
-    try {
-      if (e && e.currentTarget && e.pointerId) {
-        e.currentTarget.releasePointerCapture(e.pointerId);
-      }
-    } catch {}
-    setIsDragging(false);
-    setDragPos(null);
-    setDragAngle(null);
-    lastSnappedNodeRef.current = null;
-    if (playClick) playClick(520);
-  }, [isDragging, playClick]);
-
-  // Global window pointerup safety
-  useEffect(() => {
-    const onGlobalPointerUp = () => {
-      if (isDragging) {
-        setIsDragging(false);
-        setDragPos(null);
-        setDragAngle(null);
-        lastSnappedNodeRef.current = null;
-      }
-    };
-    window.addEventListener('pointerup', onGlobalPointerUp);
-    return () => window.removeEventListener('pointerup', onGlobalPointerUp);
-  }, [isDragging]);
-
-  const activeCarX = isDragging && dragPos ? dragPos.x : carPose.x;
-  const activeCarY = isDragging && dragPos ? dragPos.y : carPose.y;
-  const activeCarAngle = isDragging && dragAngle !== null ? dragAngle : carPose.angle;
-
-
-  const activeZoom = Math.max(1, Number(zoom) || 1);
-
+const BoardStaticTerrain = React.memo(function BoardStaticTerrain() {
   return (
-<div
-      className={`relative w-full rounded-2xl overflow-hidden border-2 sm:border-4 border-amber-900/70 shadow-2xl bg-[#156c36] flex flex-col ${
-        fillHeight ? 'h-full' : ''
-      }`}
-    >
-            {/* Live Instructor Commentary Banner during Solution Demo */}
-            {showSolutionGuide && activeDemoStepIdx !== null && (
-              <div className="absolute top-2 sm:top-3 left-1/2 -translate-x-1/2 z-10 bg-slate-950/95 border-2 border-amber-400 rounded-xl px-3 sm:px-4 py-1.5 sm:py-2.5 shadow-2xl max-w-xl w-[94%] flex items-center gap-2.5 sm:gap-3 pointer-events-none">
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-400 text-slate-950 font-black text-[11px] sm:text-xs flex items-center justify-center shrink-0">
-                  {activeDemoStepIdx + 1}/{solutionCommentarySteps.length}
-                </div>
-                <div className="min-w-0">
-                  <div className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-amber-400">
-                    Instructor Live Demonstration
-                  </div>
-                  <div className="text-[11px] sm:text-xs font-semibold text-white leading-snug">
-                    {solutionCommentarySteps[activeDemoStepIdx]}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div
-              className={`w-full ${
-                fillHeight
-                  ? activeZoom === 1
-                    ? 'flex-1 min-h-0 flex items-center justify-center overflow-hidden'
-                    : 'flex-1 min-h-0 overflow-auto overscroll-contain'
-                  : activeZoom > 1
-                  ? 'overflow-auto overscroll-contain max-h-[78dvh]'
-                  : 'overflow-hidden'
-              }`}
-              style={activeZoom > 1 ? { WebkitOverflowScrolling: 'touch' } : undefined}
-            >
-              <div
-                className={
-                  activeZoom > 1
-                    ? 'mx-auto'
-                    : fillHeight
-                    ? 'w-full h-full flex items-center justify-center'
-                    : 'w-full'
-                }
-                style={
-                  activeZoom > 1
-                    ? { width: `${Math.round(activeZoom * 100)}%`, minWidth: `${Math.round(activeZoom * 100)}%` }
-                    : undefined
-                }
-              >
-            <svg
-              ref={svgRef}
-              viewBox="0 0 1200 820"
-              preserveAspectRatio="xMidYMid meet"
-              className={
-                fillHeight && activeZoom === 1
-                  ? 'w-full h-full max-w-full max-h-full block select-none'
-                  : 'w-full h-auto block select-none'
-              }
-              style={{
-                touchAction: isDragging ? 'none' : activeZoom > 1 ? 'pan-x pan-y' : 'manipulation'
-              }}
-              onPointerMove={handleCarPointerMove}
-              onPointerUp={handleCarPointerUp}
-              onPointerCancel={handleCarPointerUp}
-            >
-              <defs>
-                {/* Subtle Tabletop Board Matte Texture */}
-                <pattern id="boardGrid" width="40" height="40" patternUnits="userSpaceOnUse">
-                  <path
-                    d="M 40 0 L 0 0 0 40"
-                    fill="none"
-                    stroke="#ffffff"
-                    strokeWidth="0.6"
-                    strokeOpacity="0.04"
-                  />
-                </pattern>
-
-                {/* White Painted Road Arrow Marker */}
-                <marker
-                  id="roadArrowWhite"
-                  viewBox="0 0 10 10"
-                  refX="6"
-                  refY="5"
-                  markerWidth="4.5"
-                  markerHeight="4.5"
-                  orient="auto-start-reverse"
-                >
-                  <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#f8fafc" />
-                </marker>
-
-                {/* Plotted Route Arrow Marker */}
-                <marker
-                  id="routeArrowCyan"
-                  viewBox="0 0 10 10"
-                  refX="6"
-                  refY="5"
-                  markerWidth="5"
-                  markerHeight="5"
-                  orient="auto"
-                >
-                  <path d="M 0 1 L 9 5 L 0 9 z" fill="#38bdf8" />
-                </marker>
-
-                {/* Solution Guide Arrow Marker (Gold) */}
-                <marker
-                  id="solutionArrowGold"
-                  viewBox="0 0 10 10"
-                  refX="6"
-                  refY="5"
-                  markerWidth="5"
-                  markerHeight="5"
-                  orient="auto"
-                >
-                  <path d="M 0 1 L 9 5 L 0 9 z" fill="#facc15" />
-                </marker>
-
-                {/* Drop Shadow for 3D Toy Cars */}
-                <filter id="carShadow" x="-30%" y="-30%" width="160%" height="160%">
-                  <feDropShadow dx="1.5" dy="2.5" stdDeviation="2" floodColor="#000000" floodOpacity="0.65" />
-                </filter>
-              </defs>
-
+    <g id="board-static-terrain">
               {/* 1. GREEN TABLETOP SURFACE */}
               <rect x="0" y="0" width="1200" height="820" fill="#156c36" />
               <rect x="0" y="0" width="1200" height="820" fill="url(#boardGrid)" />
@@ -759,6 +484,364 @@ export default function BoardCanvas({
                 })}
               </g>
 
+    </g>
+  );
+});
+
+export default function BoardCanvas({
+  mode = 'challenges',
+  setCarColor,
+  playClick,
+  showSolutionGuide,
+  activeDemoStepIdx,
+  solutionCommentarySteps = [],
+  officialSolutionPath = [],
+  plottedPath = [],
+  startNodeId,
+  targetNodeId,
+  blockedNodes = [],
+  showWaypoints = true,
+  validNextNodeIds = [],
+  showRuleInspector = false,
+  inspectedNodeId,
+  carPose = { x: 0, y: 0, angle: 90, turn: 'none', isReverse: false },
+  carColor = '#ef4444',
+  carLabel = 'RED CAR',
+  vehicleType = 'saloon',
+  currentChallenge = {},
+  handleNodeClick,
+  lastPlottedNodeId: propLastPlottedNodeId,
+  isDriving = false,
+  parkedCars,
+  zoom = 1,
+  fillHeight = false,
+  compactHud = false
+}) {
+  const lastPlottedNodeId = propLastPlottedNodeId !== undefined
+    ? propLastPlottedNodeId
+    : (plottedPath && plottedPath.length > 0 ? plottedPath[plottedPath.length - 1] : null);
+  // Drag-and-Drive Interaction State (Direct DOM updates via rAF for 60/120fps touch smoothness)
+  const svgRef = useRef(null);
+  const carGroupRef = useRef(null);
+  const carRotateRef = useRef(null);
+  const attractorGroupRef = useRef(null);
+
+  const [isDragging, setIsDragging] = useState(false);
+  const isDraggingRef = useRef(false);
+  const activePointerIdRef = useRef(null);
+  const dragPosRef = useRef(null);
+  const dragAngleRef = useRef(null);
+  const lastMovePtRef = useRef(null);
+  const lastSnappedNodeRef = useRef(null);
+  const dragRafRef = useRef(null);
+
+  // Convert Client Screen Coordinates to SVG Tabletop Coordinates
+  const getSvgCoords = useCallback((e) => {
+    if (!svgRef.current) return null;
+    const pt = svgRef.current.createSVGPoint();
+    pt.x = e.clientX;
+    pt.y = e.clientY;
+    const ctm = svgRef.current.getScreenCTM();
+    if (!ctm) return null;
+    return pt.matrixTransform(ctm.inverse());
+  }, []);
+
+  // Apply live position & heading directly to SVG nodes inside rAF (zero React re-renders during drag)
+  const flushDragTransform = useCallback(() => {
+    dragRafRef.current = null;
+    if (!isDraggingRef.current || !dragPosRef.current) return;
+    const { x, y } = dragPosRef.current;
+    const angle = dragAngleRef.current ?? carPose.angle;
+    if (carGroupRef.current) {
+      carGroupRef.current.setAttribute('transform', `translate(${x}, ${y})`);
+    }
+    if (carRotateRef.current) {
+      carRotateRef.current.setAttribute('transform', `rotate(${angle})`);
+    }
+    if (attractorGroupRef.current) {
+      const lines = attractorGroupRef.current.querySelectorAll('line[data-attractor="true"]');
+      for (let i = 0; i < lines.length; i += 1) {
+        lines[i].setAttribute('x1', x);
+        lines[i].setAttribute('y1', y);
+      }
+    }
+  }, [carPose.angle]);
+
+  // Lock native touch scrolling ONLY while actively dragging the car
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return undefined;
+    const onTouchMoveLock = (ev) => {
+      if (isDraggingRef.current && ev.cancelable) {
+        ev.preventDefault();
+      }
+    };
+    svg.addEventListener('touchmove', onTouchMoveLock, { passive: false });
+    return () => svg.removeEventListener('touchmove', onTouchMoveLock);
+  }, []);
+
+  // Grab the Toy Car (Pointer Down)
+  const handleCarPointerDown = useCallback((e) => {
+    if (isDriving) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    try {
+      svgRef.current?.setPointerCapture?.(e.pointerId);
+    } catch {}
+
+    const pt = getSvgCoords(e) || { x: carPose.x, y: carPose.y };
+    isDraggingRef.current = true;
+    activePointerIdRef.current = e.pointerId;
+    dragPosRef.current = pt;
+    dragAngleRef.current = carPose.angle;
+    lastMovePtRef.current = pt;
+    lastSnappedNodeRef.current = lastPlottedNodeId;
+
+    setIsDragging(true);
+    if (playClick) playClick(640);
+  }, [isDriving, getSvgCoords, carPose.x, carPose.y, carPose.angle, lastPlottedNodeId, playClick]);
+
+  // Drag the Toy Car along the Road & Roundabout (Pointer Move)
+  const handleCarPointerMove = useCallback((e) => {
+    if (!isDraggingRef.current) return;
+    if (activePointerIdRef.current !== null && e.pointerId !== activePointerIdRef.current) return;
+
+    const pt = getSvgCoords(e);
+    if (!pt) return;
+
+    // Smoothly steer heading along actual movement vector (prevents snap-time flip)
+    const prev = lastMovePtRef.current || dragPosRef.current || pt;
+    const dx = pt.x - prev.x;
+    const dy = pt.y - prev.y;
+    if (Math.hypot(dx, dy) > 4) {
+      const targetAngle = (Math.atan2(dy, dx) * 180) / Math.PI + 90;
+      const curAngle = dragAngleRef.current ?? carPose.angle;
+      const diff = ((targetAngle - curAngle + 540) % 360) - 180;
+      dragAngleRef.current = curAngle + diff * 0.45;
+      lastMovePtRef.current = pt;
+    }
+
+    dragPosRef.current = pt;
+    if (!dragRafRef.current) {
+      dragRafRef.current = requestAnimationFrame(flushDragTransform);
+    }
+
+    const SNAP_RADIUS = e.pointerType === 'touch' ? 48 : 36;
+    let bestId = null;
+    let bestDist = Infinity;
+
+    // 1. Magnetically snap to the CLOSEST connected legal next waypoint
+    for (const nextId of validNextNodeIds) {
+      if (blockedNodes.includes(nextId)) continue;
+      const node = BOARD_NODES[nextId];
+      if (!node) continue;
+      const dist = Math.hypot(node.x - pt.x, node.y - pt.y);
+      if (dist <= SNAP_RADIUS && dist < bestDist) {
+        bestDist = dist;
+        bestId = nextId;
+      }
+    }
+
+    if (bestId && bestId !== lastSnappedNodeRef.current) {
+      lastSnappedNodeRef.current = bestId;
+      handleNodeClick(bestId);
+      return;
+    }
+
+    // 2. Drag smoothly backwards onto the previous waypoint to undo a step
+    if (plottedPath.length >= 2) {
+      const prevId = plottedPath[plottedPath.length - 2];
+      const prevNode = BOARD_NODES[prevId];
+      if (prevNode) {
+        const dist = Math.hypot(prevNode.x - pt.x, prevNode.y - pt.y);
+        if (dist <= SNAP_RADIUS * 0.85 && prevId !== lastSnappedNodeRef.current) {
+          lastSnappedNodeRef.current = prevId;
+          handleNodeClick(prevId);
+        }
+      }
+    }
+  }, [getSvgCoords, flushDragTransform, carPose.angle, validNextNodeIds, blockedNodes, plottedPath, handleNodeClick]);
+
+  // Release the Toy Car cleanly
+  const stopDragging = useCallback((e, playSound = true) => {
+    if (!isDraggingRef.current) return;
+    if (dragRafRef.current) {
+      cancelAnimationFrame(dragRafRef.current);
+      dragRafRef.current = null;
+    }
+    try {
+      const pid = e?.pointerId ?? activePointerIdRef.current;
+      if (pid !== null && pid !== undefined && svgRef.current?.hasPointerCapture?.(pid)) {
+        svgRef.current.releasePointerCapture(pid);
+      }
+    } catch {}
+    isDraggingRef.current = false;
+    activePointerIdRef.current = null;
+    dragPosRef.current = null;
+    dragAngleRef.current = null;
+    lastMovePtRef.current = null;
+    lastSnappedNodeRef.current = null;
+    setIsDragging(false);
+    if (playSound && playClick) playClick(520);
+  }, [playClick]);
+
+  const handleCarPointerUp = useCallback((e) => {
+    stopDragging(e, true);
+  }, [stopDragging]);
+
+  // Global pointer safety cleanup
+  useEffect(() => {
+    const onGlobalRelease = (e) => {
+      if (isDraggingRef.current) {
+        stopDragging(e, false);
+      }
+    };
+    window.addEventListener('pointerup', onGlobalRelease);
+    window.addEventListener('pointercancel', onGlobalRelease);
+    return () => {
+      window.removeEventListener('pointerup', onGlobalRelease);
+      window.removeEventListener('pointercancel', onGlobalRelease);
+      if (dragRafRef.current) cancelAnimationFrame(dragRafRef.current);
+    };
+  }, [stopDragging]);
+
+  const activeCarX = isDragging && dragPosRef.current ? dragPosRef.current.x : carPose.x;
+  const activeCarY = isDragging && dragPosRef.current ? dragPosRef.current.y : carPose.y;
+  const activeCarAngle =
+    isDragging && dragAngleRef.current !== null ? dragAngleRef.current : carPose.angle;
+
+
+  const activeZoom = Math.max(1, Number(zoom) || 1);
+
+  return (
+<div
+      className={`relative w-full rounded-2xl overflow-hidden border-2 sm:border-4 border-amber-900/70 shadow-2xl bg-[#156c36] flex flex-col ${
+        fillHeight ? 'h-full' : ''
+      }`}
+    >
+            {/* Live Instructor Commentary Banner during Solution Demo */}
+            {showSolutionGuide && activeDemoStepIdx !== null && (
+              <div className="absolute top-2 sm:top-3 left-1/2 -translate-x-1/2 z-10 bg-slate-950/95 border-2 border-amber-400 rounded-xl px-3 sm:px-4 py-1.5 sm:py-2.5 shadow-2xl max-w-xl w-[94%] flex items-center gap-2.5 sm:gap-3 pointer-events-none">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-400 text-slate-950 font-black text-[11px] sm:text-xs flex items-center justify-center shrink-0">
+                  {activeDemoStepIdx + 1}/{solutionCommentarySteps.length}
+                </div>
+                <div className="min-w-0">
+                  <div className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-amber-400">
+                    Instructor Live Demonstration
+                  </div>
+                  <div className="text-[11px] sm:text-xs font-semibold text-white leading-snug">
+                    {solutionCommentarySteps[activeDemoStepIdx]}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div
+              className={`w-full ${
+                fillHeight
+                  ? activeZoom === 1
+                    ? 'flex-1 min-h-0 flex items-center justify-center overflow-hidden'
+                    : 'flex-1 min-h-0 overflow-auto overscroll-contain'
+                  : activeZoom > 1
+                  ? 'overflow-auto overscroll-contain max-h-[78dvh]'
+                  : 'overflow-hidden'
+              }`}
+              style={activeZoom > 1 ? { WebkitOverflowScrolling: 'touch' } : undefined}
+            >
+              <div
+                className={
+                  activeZoom > 1
+                    ? 'mx-auto'
+                    : fillHeight
+                    ? 'w-full h-full flex items-center justify-center'
+                    : 'w-full'
+                }
+                style={
+                  activeZoom > 1
+                    ? { width: `${Math.round(activeZoom * 100)}%`, minWidth: `${Math.round(activeZoom * 100)}%` }
+                    : undefined
+                }
+              >
+            <svg
+              ref={svgRef}
+              viewBox="0 0 1200 820"
+              preserveAspectRatio="xMidYMid meet"
+              className={
+                fillHeight && activeZoom === 1
+                  ? 'w-full h-full max-w-full max-h-full block select-none'
+                  : 'w-full h-auto block select-none'
+              }
+              style={{
+                touchAction:
+                  activeZoom > 1
+                    ? isDragging
+                      ? 'none'
+                      : 'pan-x pan-y'
+                    : fillHeight
+                    ? 'none'
+                    : 'pan-y'
+              }}
+              onPointerMove={handleCarPointerMove}
+              onPointerUp={handleCarPointerUp}
+              onPointerCancel={handleCarPointerUp}
+            >
+              <defs>
+                {/* Subtle Tabletop Board Matte Texture */}
+                <pattern id="boardGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+                  <path
+                    d="M 40 0 L 0 0 0 40"
+                    fill="none"
+                    stroke="#ffffff"
+                    strokeWidth="0.6"
+                    strokeOpacity="0.04"
+                  />
+                </pattern>
+
+                {/* White Painted Road Arrow Marker */}
+                <marker
+                  id="roadArrowWhite"
+                  viewBox="0 0 10 10"
+                  refX="6"
+                  refY="5"
+                  markerWidth="4.5"
+                  markerHeight="4.5"
+                  orient="auto-start-reverse"
+                >
+                  <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#f8fafc" />
+                </marker>
+
+                {/* Plotted Route Arrow Marker */}
+                <marker
+                  id="routeArrowCyan"
+                  viewBox="0 0 10 10"
+                  refX="6"
+                  refY="5"
+                  markerWidth="5"
+                  markerHeight="5"
+                  orient="auto"
+                >
+                  <path d="M 0 1 L 9 5 L 0 9 z" fill="#38bdf8" />
+                </marker>
+
+                {/* Solution Guide Arrow Marker (Gold) */}
+                <marker
+                  id="solutionArrowGold"
+                  viewBox="0 0 10 10"
+                  refX="6"
+                  refY="5"
+                  markerWidth="5"
+                  markerHeight="5"
+                  orient="auto"
+                >
+                  <path d="M 0 1 L 9 5 L 0 9 z" fill="#facc15" />
+                </marker>
+
+              </defs>
+
+              <BoardStaticTerrain />
+
               {/* 9. VIRTUAL TOY CAR TRAY IN BOTTOM-LEFT */}
               <g id="toy-car-tray" transform="translate(26, 725)">
                 <rect
@@ -810,7 +893,8 @@ export default function BoardCanvas({
               {/* 10. PARKED REFERENCE TOY CARS ("Move Car X Behind Car Y") */}
               {(parkedCars || currentChallenge?.parkedCars || []).map((pc) => (
                   <g key={pc.id} transform={`translate(${pc.x}, ${pc.y})`}>
-                    <g transform={`rotate(${pc.angle})`} filter="url(#carShadow)">
+                    <g transform={`rotate(${pc.angle})`}>
+                      <rect x="-9.5" y="-17.5" width="22" height="40" rx="5.5" fill="#000000" fillOpacity="0.38" />
                       <rect
                         x="-11"
                         y="-20"
@@ -1119,7 +1203,7 @@ export default function BoardCanvas({
 
               {/* 12B. MAGNETIC ATTRACTOR BEAMS & GUIDANCE HALOS WHILE DRAGGING THE CAR */}
               {isDragging && (
-                <g id="drag-magnetic-attractors" pointerEvents="none">
+                <g id="drag-magnetic-attractors" ref={attractorGroupRef} pointerEvents="none">
                   {/* Attractor beams to valid forward waypoints */}
                   {validNextNodeIds.map((nextId) => {
                     if (blockedNodes.includes(nextId)) return null;
@@ -1129,6 +1213,7 @@ export default function BoardCanvas({
                     return (
                       <g key={`attractor-${nextId}`}>
                         <line
+                          data-attractor="true"
                           x1={activeCarX}
                           y1={activeCarY}
                           x2={node.x}
@@ -1182,6 +1267,7 @@ export default function BoardCanvas({
                     return (
                       <g key="attractor-undo">
                         <line
+                          data-attractor="true"
                           x1={activeCarX}
                           y1={activeCarY}
                           x2={prevNode.x}
@@ -1232,17 +1318,22 @@ export default function BoardCanvas({
               {/* 13. ACTIVE PLAYER 3D-STYLED TOY CAR (WITH DRAG-TO-STEER INTERACTION) */}
               <g
                 id="player-active-car"
+                ref={carGroupRef}
                 transform={`translate(${activeCarX}, ${activeCarY})`}
                 onPointerDown={handleCarPointerDown}
                 style={{
                   pointerEvents: isDriving ? 'none' : 'auto',
                   cursor: isDriving ? 'default' : isDragging ? 'grabbing' : 'grab',
-                  touchAction: 'none'
+                  touchAction: 'none',
+                  transition:
+                    !isDragging && !isDriving
+                      ? 'transform 130ms cubic-bezier(0.22, 1, 0.36, 1)'
+                      : 'none'
                 }}
                 className="select-none"
               >
                 {/* Generous invisible thumb-grab target around car body */}
-                {!isDriving && <circle r="30" fill="transparent" />}
+                {!isDriving && <circle r="36" fill="transparent" />}
 
                 {/* Tactile Lift Scale Group (Isolated from translate to ensure 60fps buttery-smooth driving) */}
                 <g
@@ -1265,7 +1356,16 @@ export default function BoardCanvas({
                     />
                   )}
 
-                <g transform={`rotate(${activeCarAngle})`} filter="url(#carShadow)">
+                <g ref={carRotateRef} transform={`rotate(${activeCarAngle})`}>
+                  <rect
+                    x={vehicleType === 'lorry' ? -10 : -9}
+                    y={vehicleType === 'lorry' ? -21 : -17}
+                    width={vehicleType === 'lorry' ? 24 : 22}
+                    height={vehicleType === 'lorry' ? 48 : 40}
+                    rx={vehicleType === 'lorry' ? 4 : 6}
+                    fill="#000000"
+                    fillOpacity="0.38"
+                  />
                   {/* Headlight Beams */}
                   <polygon
                     points="-8,-20 -16,-44 -2,-44"
